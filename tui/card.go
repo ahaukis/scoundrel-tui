@@ -31,10 +31,17 @@ func cardBorderLayer(selected bool) *lipgloss.Layer {
 	return lipgloss.NewLayer(bStyle)
 }
 
-func emptySlotLayer() *lipgloss.Layer {
+func emptySlotLayer(selected bool) *lipgloss.Layer {
+	var col color.Color
+	if selected {
+		col = lipgloss.Green
+	} else {
+		col = lipgloss.BrightBlack
+	}
+
 	bStyle := lipgloss.NewStyle().
 		Border(dashedRoundedBorder).
-		BorderForeground(lipgloss.BrightBlack).
+		BorderForeground(col).
 		Width(cardWidth).
 		Height(cardHeight).
 		Render()
@@ -93,13 +100,13 @@ func cardBackLayer(selected bool) *lipgloss.Layer {
 
 func playerHandLayer(weapon *game.Card, slain []*game.Card, selected bool) *lipgloss.Layer {
 	if weapon == nil {
-		return emptySlotLayer()
+		return emptySlotLayer(selected)
 	}
 
 	playerHand := lipgloss.NewLayer("", cardFaceLayer(weapon, false))
 
 	for i, s := range slain {
-		sLayer := cardFaceLayer(s, false).Y(3 * i)
+		sLayer := cardFaceLayer(s, false).Y(2 * (i + 1))
 		playerHand.AddLayers(sLayer)
 	}
 

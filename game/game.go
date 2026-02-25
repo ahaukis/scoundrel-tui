@@ -147,7 +147,12 @@ func (g *Game) TakeDamage(damage, roomIdx int) {
 		panic("damage cannot be negative")
 	}
 	monsterCard := g.Room[roomIdx]
-	g.AddToSlain(monsterCard)
+
+	if g.Weapon != nil {
+		g.AddToSlain(monsterCard)
+	} else {
+		g.LastDiscarded = monsterCard
+	}
 	g.Room[roomIdx] = nil
 	g.RemoveHP(damage)
 }
