@@ -116,7 +116,9 @@ func (m model) View() tea.View {
 		X(topRow.GetX() + (topRow.Width()-cardWidth)/2).
 		Y(topRow.GetY() + topRow.Height() + 1)
 
-	comp := lipgloss.NewCompositor(topRow, playerHand)
+	footer := footerLayer(m.game.HP, m.weaponEnabled).Y(playerHand.GetY() + playerHand.Height())
+
+	comp := lipgloss.NewCompositor(topRow, playerHand, footer)
 	s := comp.Render()
 	s += "\n"
 
