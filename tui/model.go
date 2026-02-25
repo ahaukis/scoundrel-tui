@@ -11,11 +11,12 @@ type model struct {
 	selectedRoomIdx int // -1 if no card in room is currently selected
 	selectedDungeon bool
 	selectedHand    bool
+	weaponEnabled   bool
 }
 
 func InitialModel() model {
 	g := game.NewRandomGame()
-	return model{game: g, selectedRoomIdx: 0}
+	return model{game: g, selectedRoomIdx: 0, weaponEnabled: true}
 }
 
 func (m model) Init() tea.Cmd {
@@ -51,22 +52,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "space", "enter":
 			if i := m.selectedRoomIdx; i >= 0 {
-				c := m.game.Room[i]
-				switch {
-				case c == nil:
-					return m, nil
-				case c.IsWeapon():
-					m.game.TakeWeapon(i)
-				case c.IsHealthPotion():
-					m.game.UseHealthPotion(i)
-				case c.IsMonster():
-					dmg := m.game.CalculateDamage(c)
-					m.game.TakeDamage(dmg, i)
-				}
+				m.game.MakeRoomAction(i, m.weaponEnabled)
+			}
+
+		case "s":
+			if !m.game.SkippedLastRoom {
+				m.game.SkipRoom()
 			}
 
 		}
+	}
 
+	if m.game.IsRoomDone() {
+		m.game.DealRoom()
+		return m, nil
 	}
 
 	return m, nil

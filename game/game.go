@@ -32,11 +32,19 @@ func NewRandomGame() *Game {
 
 // Clear the existing room and deal a new one from the dungeon deck.
 func (g *Game) DealRoom() {
+	for _, c := range g.Room {
+		if c != nil {
+			g.LastDiscarded = c
+		}
+	}
 	g.Room = g.Room[:0]
 	for range min(CardsPerRoom, len(g.Dungeon)) {
 		lastIdx := len(g.Dungeon) - 1
 		g.Room = append(g.Room, g.Dungeon[lastIdx])
 		g.Dungeon = g.Dungeon[:lastIdx]
+	}
+	if g.SkippedLastRoom {
+		g.SkippedLastRoom = false
 	}
 }
 
@@ -49,8 +57,8 @@ func (g *Game) SkipRoom() {
 		}
 	}
 	g.Dungeon = append(nonNils, g.Dungeon...)
-	g.SkippedLastRoom = true
 	g.DealRoom()
+	g.SkippedLastRoom = true
 }
 
 // Check if enough actions have been taken to deal the next room.
@@ -90,6 +98,21 @@ func (g *Game) RemoveHP(p int) {
 	}
 }
 
+func (g *Game) MakeRoomAction(roomIdx int, useWeapon bool) {
+	c := g.Room[roomIdx]
+	if c == nil {
+		return
+	}
+	switch {
+	case c.IsWeapon():
+		g.TakeWeapon(roomIdx)
+	case c.IsHealthPotion():
+		g.UseHealthPotion(roomIdx)
+	case c.IsMonster():
+		g.AttackMonster(roomIdx, useWeapon)
+	}
+}
+
 // Use and discard a health potion card. roomIdx is the card's index in the current room.
 func (g *Game) UseHealthPotion(roomIdx int) {
 	potionCard := g.Room[roomIdx]
@@ -114,13 +137,30 @@ func (g *Game) TakeWeapon(roomIdx int) {
 	g.Room[roomIdx] = nil
 }
 
+func (g *Game) AttackMonster(roomIdx int, useWeapon bool) {
+	m := g.Room[roomIdx]
+	dmg, weaponFailed := g.calculateDamage(m, useWeapon)
+
+	if dmg < 0 {
+		panic("damage cannot be negative")
+	}
+
+	if g.Weapon != nil && useWeapon && !weaponFailed {
+		g.AddToSlain(m)
+	} else {
+		g.LastDiscarded = m
+	}
+	g.Room[roomIdx] = nil
+	g.RemoveHP(dmg)
+}
+
 // Calculate the damage that would be taken by attacking the monster card. Does not affect HP or the room.
-func (g *Game) CalculateDamage(monster *Card) int {
+func (g *Game) calculateDamage(monster *Card, useWeapon bool) (int, bool) {
 	fullDamage := monster.IntRank()
 
-	if g.Weapon == nil {
+	if g.Weapon == nil || !useWeapon {
 		// no weapon -> full damage taken
-		return fullDamage
+		return fullDamage, false
 	}
 
 	// negative damage would add to HP!
@@ -128,31 +168,15 @@ func (g *Game) CalculateDamage(monster *Card) int {
 
 	if len(g.MonstersSlain) == 0 {
 		// unused weapon has full strength
-		return reducedDamage
+		return reducedDamage, false
 	}
 
 	lastSlain := g.MonstersSlain[len(g.MonstersSlain)-1]
 	if lastSlain.RanksAbove(monster) {
 		// last slain was of stronger than current one -> can use weapon
-		return reducedDamage
+		return reducedDamage, false
 	} else {
 		// ... -> cannot use weapon
-		return fullDamage
+		return fullDamage, true
 	}
-}
-
-// Take damage by the precalculated amount. roomIdx is the attacked monster's index in the current room.
-func (g *Game) TakeDamage(damage, roomIdx int) {
-	if damage < 0 {
-		panic("damage cannot be negative")
-	}
-	monsterCard := g.Room[roomIdx]
-
-	if g.Weapon != nil {
-		g.AddToSlain(monsterCard)
-	} else {
-		g.LastDiscarded = monsterCard
-	}
-	g.Room[roomIdx] = nil
-	g.RemoveHP(damage)
 }
