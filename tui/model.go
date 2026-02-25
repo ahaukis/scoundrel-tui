@@ -2,6 +2,7 @@ package tui
 
 import (
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/ahaukis/scoundrel-tui/game"
 )
 
@@ -31,5 +32,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() tea.View {
-	return tea.NewView("Hello world\n")
+	cLayer := cardLayer(m.Game.Dungeon[0], false)
+	comp := lipgloss.NewCompositor(cLayer)
+	s := comp.Render()
+	s += "\n"
+	return tea.NewView(s)
 }
