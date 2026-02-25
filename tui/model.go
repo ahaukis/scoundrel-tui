@@ -32,7 +32,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() tea.View {
-	cLayer := cardLayer(m.Game.Dungeon[0], false)
+	cLayer := faceLayer(m.Game.Dungeon[0], false)
 	comp := lipgloss.NewCompositor(cLayer)
 	s := comp.Render()
 	s += "\n"

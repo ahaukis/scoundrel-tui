@@ -1,7 +1,10 @@
+// Lipgloss layers for single cards.
+
 package tui
 
 import (
 	"image/color"
+	"strings"
 
 	"charm.land/lipgloss/v2"
 	"github.com/ahaukis/scoundrel-tui/game"
@@ -10,28 +13,41 @@ import (
 const cardHeight = 6
 const cardWidth = 8
 
-func border(selected bool) string {
+func borderLayer(selected bool) *lipgloss.Layer {
 	var col color.Color
 	if selected {
-		col = lipgloss.Green
+		col = lipgloss.BrightGreen
 	} else {
 		col = lipgloss.White
 	}
 
-	return lipgloss.NewStyle().
+	bStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		Foreground(col).
+		BorderForeground(col).
 		Width(cardWidth).
 		Height(cardHeight).
 		Render()
+
+	return lipgloss.NewLayer(bStyle)
 }
 
-func cardLayer(card *game.Card, selected bool) *lipgloss.Layer {
+func emptyLayer() *lipgloss.Layer {
+	bStyle := lipgloss.NewStyle().
+		Border(dashedRoundedBorder).
+		BorderForeground(lipgloss.White).
+		Width(cardWidth).
+		Height(cardHeight).
+		Render()
+
+	return lipgloss.NewLayer(bStyle)
+}
+
+func faceLayer(card *game.Card, selected bool) *lipgloss.Layer {
 	var col color.Color
 	if card.Suit.IsRed() {
-		col = lipgloss.Red
+		col = lipgloss.BrightRed
 	} else {
-		col = lipgloss.White
+		col = lipgloss.BrightWhite
 	}
 
 	s := card.String()
@@ -49,5 +65,28 @@ func cardLayer(card *game.Card, selected bool) *lipgloss.Layer {
 		X(cardWidth - lipgloss.Width(s) - 1).
 		Y(cardHeight - 2)
 
-	return lipgloss.NewLayer(border(selected), txtLayer1, txtLayer2)
+	return borderLayer(selected).AddLayers(txtLayer1, txtLayer2)
+}
+
+func backLayer(selected bool) *lipgloss.Layer {
+	sBuilder := strings.Builder{}
+	rows := cardHeight - 2
+	columns := cardWidth - 2
+
+	for i := range rows {
+		for range columns {
+			sBuilder.WriteString("#")
+		}
+		if i < rows-1 {
+			sBuilder.WriteString("\n")
+		}
+	}
+
+	backStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Blue).
+		Render(sBuilder.String())
+
+	backLayer := lipgloss.NewLayer(backStyle).X(1).Y(1)
+
+	return borderLayer(selected).AddLayers(backLayer)
 }
