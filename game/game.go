@@ -33,7 +33,7 @@ func NewRandomGame() *Game {
 // Clear the existing room and deal a new one from the dungeon deck.
 func (g *Game) DealRoom() {
 	g.Room = g.Room[:0]
-	for range min(MonstersPerRoom, len(g.Dungeon)) {
+	for range min(CardsPerRoom, len(g.Dungeon)) {
 		lastIdx := len(g.Dungeon) - 1
 		g.Room = append(g.Room, g.Dungeon[lastIdx])
 		g.Dungeon = g.Dungeon[:lastIdx]

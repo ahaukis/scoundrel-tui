@@ -34,7 +34,7 @@ func borderLayer(selected bool) *lipgloss.Layer {
 func emptyLayer() *lipgloss.Layer {
 	bStyle := lipgloss.NewStyle().
 		Border(dashedRoundedBorder).
-		BorderForeground(lipgloss.White).
+		BorderForeground(lipgloss.BrightBlack).
 		Width(cardWidth).
 		Height(cardHeight).
 		Render()
@@ -83,7 +83,7 @@ func backLayer(selected bool) *lipgloss.Layer {
 	}
 
 	backStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Blue).
+		Foreground(lipgloss.Black).
 		Render(sBuilder.String())
 
 	backLayer := lipgloss.NewLayer(backStyle).X(1).Y(1)

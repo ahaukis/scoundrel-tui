@@ -32,9 +32,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() tea.View {
-	cLayer := faceLayer(m.Game.Dungeon[0], false)
-	comp := lipgloss.NewCompositor(cLayer)
+	discardPile := emptyLayer()
+
+	emptyRoom := lipgloss.NewLayer("").X(discardPile.GetX() + discardPile.Width() + 5)
+	for i := range game.CardsPerRoom {
+		emptyRoom.AddLayers(emptyLayer().X((cardWidth + 1) * i))
+	}
+
+	dungeonPile := backLayer(false).X(emptyRoom.GetX() + emptyRoom.Width() + 5)
+
+	topRow := lipgloss.NewLayer("", discardPile, emptyRoom, dungeonPile)
+
+	comp := lipgloss.NewCompositor(topRow)
 	s := comp.Render()
 	s += "\n"
+
 	return tea.NewView(s)
 }

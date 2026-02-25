@@ -13,5 +13,5 @@ const MaxSuit Suit = 3
 const MinHP = 0
 const MaxHP = 20
 
-const MonstersPerRoom = 4
+const CardsPerRoom = 4
 const ReqMovesPerRoom = 3
