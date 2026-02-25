@@ -18,6 +18,7 @@ func NewCard(rank Rank, suit Suit) *Card {
 	return &Card{rank, suit}
 }
 
+// Get the card's rank as an integer.
 func (c *Card) IntRank() int {
 	return int(c.rank)
 }

@@ -1,3 +1,5 @@
+// Contants related to Scoundrel rules.
+
 package game
 
 const DeckSize = 52

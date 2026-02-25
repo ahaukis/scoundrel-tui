@@ -1,5 +1,6 @@
 package game
 
+// Current state of the Scoundrel game.
 type Game struct {
 	HP              int
 	Dungeon         []*Card
@@ -10,6 +11,7 @@ type Game struct {
 	SkippedLastRoom bool
 }
 
+// Create a new game with the given deck.
 func NewGame(d []*Card) *Game {
 	return &Game{
 		HP:              MaxHP,
@@ -22,8 +24,9 @@ func NewGame(d []*Card) *Game {
 	}
 }
 
+// Create a new game with a shuffled Scoundrel deck.
 func NewRandomGame() *Game {
-	d := NewScoundrelDeck()
+	d := NewShuffledScoundrelDeck()
 	return NewGame(d)
 }
 
@@ -50,6 +53,7 @@ func (g *Game) SkipRoom() {
 	g.DealRoom()
 }
 
+// Check if enough actions have been taken to deal the next room.
 func (g *Game) IsRoomDone() bool {
 	nils := 0
 	for _, c := range g.Room {
@@ -112,30 +116,36 @@ func (g *Game) TakeWeapon(roomIdx int) {
 
 // Calculate the damage that would be taken by attacking the monster card. Does not affect HP or the room.
 func (g *Game) CalculateDamage(monster *Card) int {
-	mRank := monster.IntRank()
+	fullDamage := monster.IntRank()
 
 	if g.Weapon == nil {
 		// no weapon -> full damage taken
-		return mRank
+		return fullDamage
 	}
+
+	// negative damage would add to HP!
+	reducedDamage := max(0, fullDamage-g.Weapon.IntRank())
 
 	if len(g.MonstersSlain) == 0 {
 		// unused weapon has full strength
-		return max(0, mRank-g.Weapon.IntRank())
+		return reducedDamage
 	}
 
-	lastSlainRank := g.MonstersSlain[len(g.MonstersSlain)-1].IntRank()
-	if lastSlainRank > mRank {
+	lastSlain := g.MonstersSlain[len(g.MonstersSlain)-1]
+	if lastSlain.RanksAbove(monster) {
 		// last slain was of stronger than current one -> can use weapon
-		return max(0, mRank-g.Weapon.IntRank())
+		return reducedDamage
 	} else {
 		// ... -> cannot use weapon
-		return mRank
+		return fullDamage
 	}
 }
 
 // Take damage by the precalculated amount. roomIdx is the attacked monster's index in the current room.
 func (g *Game) TakeDamage(damage, roomIdx int) {
+	if damage < 0 {
+		panic("damage cannot be negative")
+	}
 	monsterCard := g.Room[roomIdx]
 	g.AddToSlain(monsterCard)
 	g.Room[roomIdx] = nil
