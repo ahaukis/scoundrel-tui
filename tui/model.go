@@ -34,9 +34,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() tea.View {
 	var discardPile *lipgloss.Layer
 	if disc := m.Game.LastDiscarded; disc != nil {
-		discardPile = faceLayer(disc, false)
+		discardPile = cardFaceLayer(disc, false)
 	} else {
-		discardPile = emptyLayer()
+		discardPile = emptySlotLayer()
 	}
 
 	currentRoom := lipgloss.NewLayer("").X(discardPile.GetX() + discardPile.Width() + 5)
@@ -54,24 +54,28 @@ func (m model) View() tea.View {
 	for i, c := range r {
 		var cLayer *lipgloss.Layer
 		if c != nil {
-			cLayer = faceLayer(c, false)
+			cLayer = cardFaceLayer(c, false)
 		} else {
-			cLayer = emptyLayer()
+			cLayer = emptySlotLayer()
 		}
 		currentRoom.AddLayers(cLayer.X((cardWidth + 1) * i))
 	}
 
 	var dungeonPile *lipgloss.Layer
 	if len(m.Game.Dungeon) > 0 {
-		dungeonPile = backLayer(false)
+		dungeonPile = cardBackLayer(false)
 	} else {
-		dungeonPile = emptyLayer()
+		dungeonPile = emptySlotLayer()
 	}
 	dungeonPile = dungeonPile.X(currentRoom.GetX() + currentRoom.Width() + 5)
 
 	topRow := lipgloss.NewLayer("", discardPile, currentRoom, dungeonPile)
 
-	comp := lipgloss.NewCompositor(topRow)
+	playerHand := playerHandLayer(m.Game.Weapon, m.Game.MonstersSlain, false).
+		X(topRow.GetX() + (topRow.Width()-cardWidth)/2).
+		Y(topRow.GetY() + topRow.Height() + 1)
+
+	comp := lipgloss.NewCompositor(topRow, playerHand)
 	s := comp.Render()
 	s += "\n"
 

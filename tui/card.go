@@ -13,7 +13,7 @@ import (
 const cardHeight = 6
 const cardWidth = 8
 
-func borderLayer(selected bool) *lipgloss.Layer {
+func cardBorderLayer(selected bool) *lipgloss.Layer {
 	var col color.Color
 	if selected {
 		col = lipgloss.BrightGreen
@@ -31,7 +31,7 @@ func borderLayer(selected bool) *lipgloss.Layer {
 	return lipgloss.NewLayer(bStyle)
 }
 
-func emptyLayer() *lipgloss.Layer {
+func emptySlotLayer() *lipgloss.Layer {
 	bStyle := lipgloss.NewStyle().
 		Border(dashedRoundedBorder).
 		BorderForeground(lipgloss.BrightBlack).
@@ -42,7 +42,7 @@ func emptyLayer() *lipgloss.Layer {
 	return lipgloss.NewLayer(bStyle)
 }
 
-func faceLayer(card *game.Card, selected bool) *lipgloss.Layer {
+func cardFaceLayer(card *game.Card, selected bool) *lipgloss.Layer {
 	var col color.Color
 	if card.Suit.IsRed() {
 		col = lipgloss.BrightRed
@@ -65,10 +65,10 @@ func faceLayer(card *game.Card, selected bool) *lipgloss.Layer {
 		X(cardWidth - lipgloss.Width(s) - 1).
 		Y(cardHeight - 2)
 
-	return borderLayer(selected).AddLayers(txtLayer1, txtLayer2)
+	return cardBorderLayer(selected).AddLayers(txtLayer1, txtLayer2)
 }
 
-func backLayer(selected bool) *lipgloss.Layer {
+func cardBackLayer(selected bool) *lipgloss.Layer {
 	sBuilder := strings.Builder{}
 	rows := cardHeight - 2
 	columns := cardWidth - 2
@@ -86,7 +86,22 @@ func backLayer(selected bool) *lipgloss.Layer {
 		Foreground(lipgloss.Black).
 		Render(sBuilder.String())
 
-	backLayer := lipgloss.NewLayer(backStyle).X(1).Y(1)
+	cardBackLayer := lipgloss.NewLayer(backStyle).X(1).Y(1)
 
-	return borderLayer(selected).AddLayers(backLayer)
+	return cardBorderLayer(selected).AddLayers(cardBackLayer)
+}
+
+func playerHandLayer(weapon *game.Card, slain []*game.Card, selected bool) *lipgloss.Layer {
+	if weapon == nil {
+		return emptySlotLayer()
+	}
+
+	playerHand := lipgloss.NewLayer("", cardFaceLayer(weapon, false))
+
+	for i, s := range slain {
+		sLayer := cardFaceLayer(s, false).Y(3 * i)
+		playerHand.AddLayers(sLayer)
+	}
+
+	return playerHand
 }
