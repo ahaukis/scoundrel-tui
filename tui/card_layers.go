@@ -10,9 +10,6 @@ import (
 	"github.com/ahaukis/scoundrel-tui/game"
 )
 
-const cardHeight = 6
-const cardWidth = 8
-
 // A custom dashed border with rounded corners.
 var dashedRoundedBorder = lipgloss.Border{
 	Top:          "╌",
