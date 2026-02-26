@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"strconv"
+
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/ahaukis/scoundrel-tui/game"
@@ -25,51 +27,97 @@ func (m model) Init() tea.Cmd {
 	return tea.RequestBackgroundColor
 }
 
+func (m *model) unselectRoom() {
+	m.selectedRoomIdx = -1
+}
+
+func (m *model) isRoomSelected() bool {
+	return m.selectedRoomIdx >= 0
+}
+
+// Flip the weaponEnabled bool to the other option
+func (m *model) toggleWeapon() {
+	m.weaponEnabled = !m.weaponEnabled
+}
+
+// Handle a key press that doesn't need to return its own message.
+func (m *model) handleKeyPress(msg tea.KeyPressMsg) {
+	s := msg.String()
+
+	// handle 1,2,...
+	if i, err := strconv.Atoi(s); err == nil {
+		if 1 <= i && i <= game.CardsPerRoom {
+			m.selectedRoomIdx = i - 1
+			m.game.MakeRoomAction(m.selectedRoomIdx, m.weaponEnabled)
+			return
+		}
+	}
+
+	switch s {
+	case "left", "h":
+		if m.selectedDungeon {
+			m.selectedDungeon = false
+			m.selectedRoomIdx = game.CardsPerRoom - 1
+		} else if m.selectedRoomIdx > 0 {
+			m.selectedRoomIdx--
+		}
+
+	case "right", "l":
+		if m.selectedRoomIdx == game.CardsPerRoom-1 {
+			m.unselectRoom()
+			m.selectedDungeon = true
+		} else if m.isRoomSelected() {
+			m.selectedRoomIdx++
+		}
+
+	case "down", "j":
+		if m.isRoomSelected() {
+			m.unselectRoom()
+			m.selectedHand = true
+		}
+
+	case "up", "k":
+		if m.selectedHand {
+			m.selectedHand = false
+			m.selectedRoomIdx = 0
+		}
+
+	case "space", "enter":
+		if m.isRoomSelected() {
+			m.game.MakeRoomAction(m.selectedRoomIdx, m.weaponEnabled)
+		} else if m.selectedDungeon {
+			m.game.SkipRoom()
+		} else if m.selectedHand {
+			m.toggleWeapon()
+		}
+
+	case "w":
+		m.toggleWeapon()
+
+	case "s":
+		m.game.SkipRoom()
+
+	}
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.BackgroundColorMsg:
+		// set background color based on
 		m.hasDarkBackground = msg.IsDark()
 		return m, nil
 
 	case tea.KeyPressMsg:
-		switch msg.String() {
-
-		case "ctrl+c", "q":
+		if s := msg.String(); s == "ctrl+c" || s == "q" {
 			return m, tea.Quit
-
-		case "left":
-			if m.selectedDungeon {
-				m.selectedDungeon = false
-				m.selectedRoomIdx = game.CardsPerRoom - 1
-			} else if m.selectedRoomIdx > 0 {
-				m.selectedRoomIdx--
-			}
-
-		case "right":
-			if m.selectedRoomIdx == game.CardsPerRoom-1 {
-				m.selectedRoomIdx = -1
-				m.selectedDungeon = true
-			} else if m.selectedRoomIdx >= 0 {
-				m.selectedRoomIdx++
-			}
-
-		case "space", "enter":
-			if i := m.selectedRoomIdx; i >= 0 {
-				m.game.MakeRoomAction(i, m.weaponEnabled)
-			}
-
-		case "s":
-			if !m.game.SkippedLastRoom {
-				m.game.SkipRoom()
-			}
-
 		}
+		m.handleKeyPress(msg)
+
 	}
 
 	if m.game.IsRoomDone() {
 		m.game.DealRoom()
-		return m, nil
 	}
 
 	return m, nil
@@ -116,7 +164,7 @@ func (m model) View() tea.View {
 
 	topRow := lipgloss.NewLayer("", discardPile, currentRoom, dungeonPile)
 
-	playerHand := playerHandLayer(m.game.Weapon, m.game.MonstersSlain, false, m.hasDarkBackground).
+	playerHand := playerHandLayer(m.game.Weapon, m.game.MonstersSlain, m.selectedHand, m.hasDarkBackground).
 		X(topRow.GetX() + (topRow.Width()-cardWidth)/2).
 		Y(topRow.GetY() + topRow.Height() + 1)
 

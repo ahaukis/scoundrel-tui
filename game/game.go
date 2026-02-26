@@ -2,25 +2,25 @@ package game
 
 // Current state of the Scoundrel game.
 type Game struct {
-	HP              int
-	Dungeon         []*Card
-	Room            []*Card
-	LastDiscarded   *Card
-	Weapon          *Card
-	MonstersSlain   []*Card
-	SkippedLastRoom bool
+	HP                     int
+	Dungeon                []*Card
+	Room                   []*Card
+	LastDiscarded          *Card
+	Weapon                 *Card
+	MonstersSlain          []*Card
+	skippedLastRoom        bool
+	usedHealthPotionInRoom bool
 }
 
 // Create a new game with the given deck.
 func NewGame(d []*Card) *Game {
 	return &Game{
-		HP:              MaxHP,
-		Dungeon:         d,
-		Room:            make([]*Card, 0),
-		LastDiscarded:   nil,
-		Weapon:          nil,
-		MonstersSlain:   make([]*Card, 0),
-		SkippedLastRoom: false,
+		HP:            MaxHP,
+		Dungeon:       d,
+		Room:          make([]*Card, 0),
+		LastDiscarded: nil,
+		Weapon:        nil,
+		MonstersSlain: make([]*Card, 0),
 	}
 }
 
@@ -43,13 +43,20 @@ func (g *Game) DealRoom() {
 		g.Room = append(g.Room, g.Dungeon[lastIdx])
 		g.Dungeon = g.Dungeon[:lastIdx]
 	}
-	if g.SkippedLastRoom {
-		g.SkippedLastRoom = false
+	if g.skippedLastRoom {
+		g.skippedLastRoom = false
+	}
+	if g.usedHealthPotionInRoom {
+		g.usedHealthPotionInRoom = false
 	}
 }
 
 // Skip the current room, placing it at the bottom of the dungeon deck.
 func (g *Game) SkipRoom() {
+	if g.skippedLastRoom {
+		// cannot skip 2 rooms in a row
+		return
+	}
 	var nonNils []*Card
 	for _, c := range g.Room {
 		if c != nil {
@@ -58,7 +65,7 @@ func (g *Game) SkipRoom() {
 	}
 	g.Dungeon = append(nonNils, g.Dungeon...)
 	g.DealRoom()
-	g.SkippedLastRoom = true
+	g.skippedLastRoom = true
 }
 
 // Check if enough actions have been taken to deal the next room.
@@ -115,10 +122,15 @@ func (g *Game) MakeRoomAction(roomIdx int, useWeapon bool) {
 
 // Use and discard a health potion card. roomIdx is the card's index in the current room.
 func (g *Game) UseHealthPotion(roomIdx int) {
+	if g.usedHealthPotionInRoom {
+		// can only ue 1 health potion per room
+		return
+	}
 	potionCard := g.Room[roomIdx]
 	g.AddHP(potionCard.IntRank())
 	g.Room[roomIdx] = nil
 	g.LastDiscarded = potionCard
+	g.usedHealthPotionInRoom = true
 }
 
 // Take a new weapon card and discard the existing player hand, if any. roomIdx is the card's index in the current room.
