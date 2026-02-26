@@ -1,12 +1,31 @@
 package tui
 
 import (
+	"image/color"
 	"strconv"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/ahaukis/scoundrel-tui/game"
 )
+
+// A custom dashed border with rounded corners.
+var dashedRoundedBorder = lipgloss.Border{
+	Top:          "╌",
+	Bottom:       "╌",
+	Left:         "┆",
+	Right:        "┆",
+	TopLeft:      "╭",
+	TopRight:     "╮",
+	BottomLeft:   "╰",
+	BottomRight:  "╯",
+	MiddleLeft:   "├",
+	MiddleRight:  "┤",
+	Middle:       "┼",
+	MiddleTop:    "┬",
+	MiddleBottom: "┴",
+}
 
 type tableModel struct {
 	game              *game.Game
@@ -112,9 +131,9 @@ func (m tableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m tableModel) View() tea.View {
 	var discardPile *lipgloss.Layer
 	if disc := m.game.LastDiscarded; disc != nil {
-		discardPile = cardFaceLayer(disc, false, m.hasDarkBackground)
+		discardPile = m.cardFaceLayer(disc, false)
 	} else {
-		discardPile = emptySlotLayer(false, m.hasDarkBackground)
+		discardPile = m.emptySlotLayer(false)
 	}
 
 	currentRoom := lipgloss.NewLayer("").X(discardPile.GetX() + discardPile.Width() + horizontalSpace)
@@ -133,24 +152,24 @@ func (m tableModel) View() tea.View {
 		var cLayer *lipgloss.Layer
 		selected := m.selectedRoomIdx == i
 		if c != nil {
-			cLayer = cardFaceLayer(c, selected, m.hasDarkBackground)
+			cLayer = m.cardFaceLayer(c, selected)
 		} else {
-			cLayer = emptySlotLayer(selected, m.hasDarkBackground)
+			cLayer = m.emptySlotLayer(selected)
 		}
 		currentRoom.AddLayers(cLayer.X((cardWidth + 1) * i))
 	}
 
 	var dungeonPile *lipgloss.Layer
 	if len(m.game.Dungeon) > 0 {
-		dungeonPile = cardBackLayer(m.selectedDungeon, m.hasDarkBackground)
+		dungeonPile = m.cardBackLayer(m.selectedDungeon)
 	} else {
-		dungeonPile = emptySlotLayer(m.selectedDungeon, m.hasDarkBackground)
+		dungeonPile = m.emptySlotLayer(m.selectedDungeon)
 	}
 	dungeonPile = dungeonPile.X(currentRoom.GetX() + currentRoom.Width() + horizontalSpace)
 
 	topRow := lipgloss.NewLayer("", discardPile, currentRoom, dungeonPile)
 
-	playerHand := playerHandLayer(m.game.Weapon, m.game.MonstersSlain, m.selectedHand, m.hasDarkBackground).
+	playerHand := m.playerHandLayer(m.game.Weapon, m.game.MonstersSlain, m.selectedHand).
 		X(topRow.GetX() + (topRow.Width()-cardWidth)/2).
 		Y(topRow.GetY() + topRow.Height() + verticalSpace)
 
@@ -161,4 +180,103 @@ func (m tableModel) View() tea.View {
 	s += "\n"
 
 	return tea.NewView(s)
+}
+
+func (m *tableModel) lightDark(colors [2]color.Color) color.Color {
+	return lipgloss.LightDark(m.hasDarkBackground)(colors[0], colors[1])
+}
+
+func (m *tableModel) cardBorderStyle(selected bool) lipgloss.Style {
+	var col color.Color
+	if selected {
+		col = m.lightDark(colorScheme["selectedBorder"])
+	} else {
+		col = m.lightDark(colorScheme["border"])
+	}
+	bStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(col).
+		Width(cardWidth).
+		Height(cardHeight)
+
+	return bStyle
+}
+
+func (m *tableModel) emptySlotLayer(selected bool) *lipgloss.Layer {
+	var col color.Color
+	if selected {
+		col = m.lightDark(colorScheme["selectedEmptyBorder"])
+	} else {
+		col = m.lightDark(colorScheme["emptyBorder"])
+	}
+
+	bStyle := lipgloss.NewStyle().
+		Border(dashedRoundedBorder).
+		BorderForeground(col).
+		Width(cardWidth).
+		Height(cardHeight).
+		Render()
+
+	return lipgloss.NewLayer(bStyle)
+}
+
+func (m *tableModel) cardFaceLayer(card *game.Card, selected bool) *lipgloss.Layer {
+	var col color.Color
+	if card.Suit.IsRed() {
+		col = m.lightDark(colorScheme["redSuit"])
+	} else {
+		col = m.lightDark(colorScheme["blackSuit"])
+	}
+
+	s := card.String()
+
+	txt1 := lipgloss.NewStyle().Foreground(col).Render(s)
+	txt2 := txt1
+
+	txtLayer1 := lipgloss.NewLayer(txt1).X(1).Y(1)
+	txtLayer2 := lipgloss.NewLayer(txt2).
+		X(cardWidth - lipgloss.Width(s) - 1).
+		Y(cardHeight - 2)
+
+	bLayer := m.cardBorderStyle(selected).Render()
+
+	return lipgloss.NewLayer(bLayer, txtLayer1, txtLayer2)
+}
+
+func (m *tableModel) cardBackLayer(selected bool) *lipgloss.Layer {
+	sBuilder := strings.Builder{}
+	rows := cardHeight - 2
+	columns := cardWidth - 2
+
+	for i := range rows {
+		for range columns {
+			sBuilder.WriteString("#")
+		}
+		if i < rows-1 {
+			sBuilder.WriteString("\n")
+		}
+	}
+
+	backStyle := m.cardBorderStyle(selected).
+		Foreground(m.lightDark(colorScheme["cardBack"])).
+		Render(sBuilder.String())
+
+	cardBackLayer := lipgloss.NewLayer(backStyle)
+
+	return cardBackLayer
+}
+
+func (m *tableModel) playerHandLayer(weapon *game.Card, slain []*game.Card, selected bool) *lipgloss.Layer {
+	if weapon == nil {
+		return m.emptySlotLayer(selected)
+	}
+
+	playerHand := lipgloss.NewLayer("", m.cardFaceLayer(weapon, selected))
+
+	for i, s := range slain {
+		sLayer := m.cardFaceLayer(s, selected).Y(2 * (i + 1))
+		playerHand.AddLayers(sLayer)
+	}
+
+	return playerHand
 }
