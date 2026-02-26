@@ -5,24 +5,24 @@ import (
 	"github.com/ahaukis/scoundrel-tui/game"
 )
 
-type model struct {
+type mainModel struct {
 	game              *game.Game
 	gameTable         tableModel
 	hasDarkBackground bool
 }
 
-func InitialModel() model {
+func InitialMainModel() mainModel {
 	g := game.NewRandomGame()
 	table := tableModel{game: g, selectedRoomIdx: 0, weaponEnabled: true}
-	return model{game: g, gameTable: table}
+	return mainModel{game: g, gameTable: table}
 }
 
-func (m model) Init() tea.Cmd {
+func (m mainModel) Init() tea.Cmd {
 	tableCmd := m.gameTable.Init()
 	return tea.Batch(tea.RequestBackgroundColor, tableCmd)
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	tModel, tableCmd := m.gameTable.Update(msg)
 	m.gameTable = tModel.(tableModel)
@@ -46,7 +46,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m model) View() tea.View {
+func (m mainModel) View() tea.View {
 	view := tea.NewView(m.gameTable.View().Content)
 	view.AltScreen = true
 	view.WindowTitle = "Scoundrel"
