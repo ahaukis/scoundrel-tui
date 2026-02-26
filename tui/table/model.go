@@ -8,7 +8,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/ahaukis/scoundrel-tui/game"
-	"github.com/ahaukis/scoundrel-tui/tui/color_scheme"
+	"github.com/ahaukis/scoundrel-tui/tui/palette"
 )
 
 const cardHeight = 6
@@ -195,9 +195,9 @@ func (m *Model) lightDark(colors [2]color.Color) color.Color {
 func (m *Model) cardBorderStyle(selected bool) lipgloss.Style {
 	var col color.Color
 	if selected {
-		col = m.lightDark(color_scheme.ColorScheme["selectedBorder"])
+		col = m.lightDark(palette.Colors["selectedBorder"])
 	} else {
-		col = m.lightDark(color_scheme.ColorScheme["border"])
+		col = m.lightDark(palette.Colors["border"])
 	}
 	bStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
@@ -211,9 +211,9 @@ func (m *Model) cardBorderStyle(selected bool) lipgloss.Style {
 func (m *Model) emptySlotLayer(selected bool) *lipgloss.Layer {
 	var col color.Color
 	if selected {
-		col = m.lightDark(color_scheme.ColorScheme["selectedEmptyBorder"])
+		col = m.lightDark(palette.Colors["selectedEmptyBorder"])
 	} else {
-		col = m.lightDark(color_scheme.ColorScheme["emptyBorder"])
+		col = m.lightDark(palette.Colors["emptyBorder"])
 	}
 
 	bStyle := lipgloss.NewStyle().
@@ -229,9 +229,9 @@ func (m *Model) emptySlotLayer(selected bool) *lipgloss.Layer {
 func (m *Model) cardFaceLayer(card *game.Card, selected bool) *lipgloss.Layer {
 	var col color.Color
 	if card.Suit.IsRed() {
-		col = m.lightDark(color_scheme.ColorScheme["redSuit"])
+		col = m.lightDark(palette.Colors["redSuit"])
 	} else {
-		col = m.lightDark(color_scheme.ColorScheme["blackSuit"])
+		col = m.lightDark(palette.Colors["blackSuit"])
 	}
 
 	s := card.String()
@@ -264,7 +264,7 @@ func (m *Model) cardBackLayer(selected bool) *lipgloss.Layer {
 	}
 
 	backStyle := m.cardBorderStyle(selected).
-		Foreground(m.lightDark(color_scheme.ColorScheme["cardBack"])).
+		Foreground(m.lightDark(palette.Colors["cardBack"])).
 		Render(sBuilder.String())
 
 	cardBackLayer := lipgloss.NewLayer(backStyle)

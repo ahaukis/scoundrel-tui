@@ -1,6 +1,6 @@
 // Color constants.
 
-package color_scheme
+package palette
 
 import (
 	"image/color"
@@ -8,7 +8,7 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-var ColorScheme = map[string][2]color.Color{
+var Colors = map[string][2]color.Color{
 	"border":              {lipgloss.BrightBlack, lipgloss.White},
 	"selectedBorder":      {lipgloss.BrightGreen, lipgloss.BrightGreen},
 	"emptyBorder":         {lipgloss.BrightBlack, lipgloss.BrightBlack},
