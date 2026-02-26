@@ -2,37 +2,49 @@ package tui
 
 import (
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/ahaukis/scoundrel-tui/game"
+	hpbar "github.com/ahaukis/scoundrel-tui/tui/hp_bar"
+	"github.com/ahaukis/scoundrel-tui/tui/table"
 )
 
 type mainModel struct {
 	game              *game.Game
-	gameTable         tableModel
+	gameTable         table.Model
+	hpBar             hpbar.Model
 	hasDarkBackground bool
 }
 
 func InitialMainModel() mainModel {
 	g := game.NewRandomGame()
-	table := tableModel{game: g, selectedRoomIdx: 0, weaponEnabled: true}
-	return mainModel{game: g, gameTable: table}
+	return mainModel{game: g, gameTable: table.New(g), hpBar: hpbar.New(g)}
 }
 
 func (m mainModel) Init() tea.Cmd {
-	tableCmd := m.gameTable.Init()
-	return tea.Batch(tea.RequestBackgroundColor, tableCmd)
+	var cmds []tea.Cmd
+	cmds = append(cmds, tea.RequestBackgroundColor)
+	cmds = append(cmds, m.gameTable.Init())
+	cmds = append(cmds, m.hpBar.Init())
+
+	return tea.Batch(cmds...)
 }
 
 func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
+
 	tModel, tableCmd := m.gameTable.Update(msg)
-	m.gameTable = tModel.(tableModel)
+	m.gameTable = tModel
 	cmds = append(cmds, tableCmd)
+
+	hpModel, hpCmd := m.hpBar.Update(msg)
+	m.hpBar = hpModel
+	cmds = append(cmds, hpCmd)
 
 	switch msg := msg.(type) {
 	case tea.BackgroundColorMsg:
 		// set background color based on
 		m.hasDarkBackground = msg.IsDark()
-		m.gameTable.hasDarkBackground = m.hasDarkBackground
+		m.gameTable.HasDarkBackground = m.hasDarkBackground
 	case tea.KeyPressMsg:
 		if s := msg.String(); s == "ctrl+c" || s == "q" {
 			return m, tea.Quit
@@ -47,7 +59,14 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m mainModel) View() tea.View {
-	view := tea.NewView(m.gameTable.View().Content)
+	mainLayer := lipgloss.NewLayer(m.gameTable.View())
+	hpBarLayer := lipgloss.NewLayer(m.hpBar.View()).
+		Y(mainLayer.GetY() + mainLayer.Height())
+
+	comp := lipgloss.NewCompositor(hpBarLayer, mainLayer)
+	s := comp.Render() + "\n"
+
+	view := tea.NewView(s) // view := tea.NewView(m.gameTable.View().Content)
 	view.AltScreen = true
 	view.WindowTitle = "Scoundrel"
 

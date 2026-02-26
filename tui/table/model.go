@@ -1,4 +1,4 @@
-package tui
+package table
 
 import (
 	"image/color"
@@ -8,7 +8,11 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/ahaukis/scoundrel-tui/game"
+	"github.com/ahaukis/scoundrel-tui/tui/color_scheme"
 )
+
+const cardHeight = 6
+const cardWidth = 8
 
 // A custom dashed border with rounded corners.
 var dashedRoundedBorder = lipgloss.Border{
@@ -27,37 +31,41 @@ var dashedRoundedBorder = lipgloss.Border{
 	MiddleBottom: "┴",
 }
 
-type tableModel struct {
+type Model struct {
 	game              *game.Game
 	selectedRoomIdx   int // -1 if no card in room is currently selected
 	selectedDungeon   bool
 	selectedHand      bool
 	weaponEnabled     bool
-	hasDarkBackground bool
+	HasDarkBackground bool
 }
 
-func (m tableModel) Init() tea.Cmd {
+func New(g *game.Game) Model {
+	return Model{game: g, selectedRoomIdx: 0, weaponEnabled: true}
+}
+
+func (m Model) Init() tea.Cmd {
 	m.game.DealRoom()
 	return nil
 }
 
 // Unselect the selected room card, if any.
-func (m *tableModel) unselectRoom() {
+func (m *Model) unselectRoom() {
 	m.selectedRoomIdx = -1
 }
 
 // Check if the any of the room cards is currently selected.
-func (m *tableModel) selectionInRoom() bool {
+func (m *Model) selectionInRoom() bool {
 	return m.selectedRoomIdx >= 0
 }
 
 // Flip the weaponEnabled bool to the other option
-func (m *tableModel) toggleWeapon() {
+func (m *Model) toggleWeapon() {
 	m.weaponEnabled = !m.weaponEnabled
 }
 
 // Handle a key press that doesn't need to return its own message.
-func (m *tableModel) handleKeyPress(msg tea.KeyPressMsg) {
+func (m *Model) handleKeyPress(msg tea.KeyPressMsg) {
 	msgString := msg.String()
 
 	// handle 1,2,...
@@ -116,7 +124,7 @@ func (m *tableModel) handleKeyPress(msg tea.KeyPressMsg) {
 	}
 }
 
-func (m tableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	if keyPressMsg, ok := msg.(tea.KeyPressMsg); ok {
 		m.handleKeyPress(keyPressMsg)
 	}
@@ -128,7 +136,7 @@ func (m tableModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m tableModel) View() tea.View {
+func (m Model) View() string {
 	var discardPile *lipgloss.Layer
 	if disc := m.game.LastDiscarded; disc != nil {
 		discardPile = m.cardFaceLayer(disc, false)
@@ -136,7 +144,7 @@ func (m tableModel) View() tea.View {
 		discardPile = m.emptySlotLayer(false)
 	}
 
-	currentRoom := lipgloss.NewLayer("").X(discardPile.GetX() + discardPile.Width() + horizontalSpace)
+	currentRoom := lipgloss.NewLayer("").X(discardPile.GetX() + discardPile.Width() + 5)
 
 	var r []*game.Card
 	if len(m.game.Room) > 0 {
@@ -165,33 +173,31 @@ func (m tableModel) View() tea.View {
 	} else {
 		dungeonPile = m.emptySlotLayer(m.selectedDungeon)
 	}
-	dungeonPile = dungeonPile.X(currentRoom.GetX() + currentRoom.Width() + horizontalSpace)
+	dungeonPile = dungeonPile.X(currentRoom.GetX() + currentRoom.Width() + 5)
 
 	topRow := lipgloss.NewLayer("", discardPile, currentRoom, dungeonPile)
 
 	playerHand := m.playerHandLayer(m.game.Weapon, m.game.MonstersSlain, m.selectedHand).
 		X(topRow.GetX() + (topRow.Width()-cardWidth)/2).
-		Y(topRow.GetY() + topRow.Height() + verticalSpace)
+		Y(topRow.GetY() + topRow.Height() + 1)
 
-	footer := footerLayer(m.game.HP, m.weaponEnabled).Y(playerHand.GetY() + playerHand.Height())
-
-	comp := lipgloss.NewCompositor(topRow, playerHand, footer)
+	comp := lipgloss.NewCompositor(topRow, playerHand)
 	s := comp.Render()
 	s += "\n"
 
-	return tea.NewView(s)
+	return s
 }
 
-func (m *tableModel) lightDark(colors [2]color.Color) color.Color {
-	return lipgloss.LightDark(m.hasDarkBackground)(colors[0], colors[1])
+func (m *Model) lightDark(colors [2]color.Color) color.Color {
+	return lipgloss.LightDark(m.HasDarkBackground)(colors[0], colors[1])
 }
 
-func (m *tableModel) cardBorderStyle(selected bool) lipgloss.Style {
+func (m *Model) cardBorderStyle(selected bool) lipgloss.Style {
 	var col color.Color
 	if selected {
-		col = m.lightDark(colorScheme["selectedBorder"])
+		col = m.lightDark(color_scheme.ColorScheme["selectedBorder"])
 	} else {
-		col = m.lightDark(colorScheme["border"])
+		col = m.lightDark(color_scheme.ColorScheme["border"])
 	}
 	bStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
@@ -202,12 +208,12 @@ func (m *tableModel) cardBorderStyle(selected bool) lipgloss.Style {
 	return bStyle
 }
 
-func (m *tableModel) emptySlotLayer(selected bool) *lipgloss.Layer {
+func (m *Model) emptySlotLayer(selected bool) *lipgloss.Layer {
 	var col color.Color
 	if selected {
-		col = m.lightDark(colorScheme["selectedEmptyBorder"])
+		col = m.lightDark(color_scheme.ColorScheme["selectedEmptyBorder"])
 	} else {
-		col = m.lightDark(colorScheme["emptyBorder"])
+		col = m.lightDark(color_scheme.ColorScheme["emptyBorder"])
 	}
 
 	bStyle := lipgloss.NewStyle().
@@ -220,12 +226,12 @@ func (m *tableModel) emptySlotLayer(selected bool) *lipgloss.Layer {
 	return lipgloss.NewLayer(bStyle)
 }
 
-func (m *tableModel) cardFaceLayer(card *game.Card, selected bool) *lipgloss.Layer {
+func (m *Model) cardFaceLayer(card *game.Card, selected bool) *lipgloss.Layer {
 	var col color.Color
 	if card.Suit.IsRed() {
-		col = m.lightDark(colorScheme["redSuit"])
+		col = m.lightDark(color_scheme.ColorScheme["redSuit"])
 	} else {
-		col = m.lightDark(colorScheme["blackSuit"])
+		col = m.lightDark(color_scheme.ColorScheme["blackSuit"])
 	}
 
 	s := card.String()
@@ -243,7 +249,7 @@ func (m *tableModel) cardFaceLayer(card *game.Card, selected bool) *lipgloss.Lay
 	return lipgloss.NewLayer(bLayer, txtLayer1, txtLayer2)
 }
 
-func (m *tableModel) cardBackLayer(selected bool) *lipgloss.Layer {
+func (m *Model) cardBackLayer(selected bool) *lipgloss.Layer {
 	sBuilder := strings.Builder{}
 	rows := cardHeight - 2
 	columns := cardWidth - 2
@@ -258,7 +264,7 @@ func (m *tableModel) cardBackLayer(selected bool) *lipgloss.Layer {
 	}
 
 	backStyle := m.cardBorderStyle(selected).
-		Foreground(m.lightDark(colorScheme["cardBack"])).
+		Foreground(m.lightDark(color_scheme.ColorScheme["cardBack"])).
 		Render(sBuilder.String())
 
 	cardBackLayer := lipgloss.NewLayer(backStyle)
@@ -266,7 +272,7 @@ func (m *tableModel) cardBackLayer(selected bool) *lipgloss.Layer {
 	return cardBackLayer
 }
 
-func (m *tableModel) playerHandLayer(weapon *game.Card, slain []*game.Card, selected bool) *lipgloss.Layer {
+func (m *Model) playerHandLayer(weapon *game.Card, slain []*game.Card, selected bool) *lipgloss.Layer {
 	if weapon == nil {
 		return m.emptySlotLayer(selected)
 	}

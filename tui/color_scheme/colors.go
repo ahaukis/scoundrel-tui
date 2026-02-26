@@ -1,6 +1,6 @@
 // Color constants.
 
-package tui
+package color_scheme
 
 import (
 	"image/color"
@@ -8,7 +8,7 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-var colorScheme = map[string][2]color.Color{
+var ColorScheme = map[string][2]color.Color{
 	"border":              {lipgloss.BrightBlack, lipgloss.White},
 	"selectedBorder":      {lipgloss.BrightGreen, lipgloss.BrightGreen},
 	"emptyBorder":         {lipgloss.BrightBlack, lipgloss.BrightBlack},

@@ -1,6 +1,6 @@
 package tui
 
-const cardHeight = 6
-const cardWidth = 8
-const horizontalSpace = 5
-const verticalSpace = 1
+const CardHeight = 6
+const CardWidth = 8
+const HorizontalSpace = 5
+const VerticalSpace = 1
