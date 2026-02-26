@@ -13,6 +13,23 @@ import (
 const cardHeight = 6
 const cardWidth = 8
 
+// A custom dashed border with rounded corners.
+var dashedRoundedBorder = lipgloss.Border{
+	Top:          "╌",
+	Bottom:       "╌",
+	Left:         "┆",
+	Right:        "┆",
+	TopLeft:      "╭",
+	TopRight:     "╮",
+	BottomLeft:   "╰",
+	BottomRight:  "╯",
+	MiddleLeft:   "├",
+	MiddleRight:  "┤",
+	Middle:       "┼",
+	MiddleTop:    "┬",
+	MiddleBottom: "┴",
+}
+
 func lightDark(hasDarkBackground bool, colors [2]color.Color) color.Color {
 	return lipgloss.LightDark(hasDarkBackground)(colors[0], colors[1])
 }
