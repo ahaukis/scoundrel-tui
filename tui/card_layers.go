@@ -31,22 +31,20 @@ func lightDark(hasDarkBackground bool, colors [2]color.Color) color.Color {
 	return lipgloss.LightDark(hasDarkBackground)(colors[0], colors[1])
 }
 
-func cardBorderLayer(selected, hasDarkBackground bool) *lipgloss.Layer {
+func cardBorderStyle(selected, hasDarkBackground bool) lipgloss.Style {
 	var col color.Color
 	if selected {
 		col = lightDark(hasDarkBackground, colorScheme["selectedBorder"])
 	} else {
 		col = lightDark(hasDarkBackground, colorScheme["border"])
 	}
-
 	bStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(col).
 		Width(cardWidth).
-		Height(cardHeight).
-		Render()
+		Height(cardHeight)
 
-	return lipgloss.NewLayer(bStyle)
+	return bStyle
 }
 
 func emptySlotLayer(selected, hasDarkBackground bool) *lipgloss.Layer {
@@ -85,7 +83,9 @@ func cardFaceLayer(card *game.Card, selected, hasDarkBackground bool) *lipgloss.
 		X(cardWidth - lipgloss.Width(s) - 1).
 		Y(cardHeight - 2)
 
-	return cardBorderLayer(selected, hasDarkBackground).AddLayers(txtLayer1, txtLayer2)
+	bLayer := cardBorderStyle(selected, hasDarkBackground).Render()
+
+	return lipgloss.NewLayer(bLayer, txtLayer1, txtLayer2)
 }
 
 func cardBackLayer(selected, hasDarkBackground bool) *lipgloss.Layer {
@@ -102,13 +102,13 @@ func cardBackLayer(selected, hasDarkBackground bool) *lipgloss.Layer {
 		}
 	}
 
-	backStyle := lipgloss.NewStyle().
+	backStyle := cardBorderStyle(selected, hasDarkBackground).
 		Foreground(lightDark(hasDarkBackground, colorScheme["cardBack"])).
 		Render(sBuilder.String())
 
-	cardBackLayer := lipgloss.NewLayer(backStyle).X(1).Y(1)
+	cardBackLayer := lipgloss.NewLayer(backStyle)
 
-	return cardBorderLayer(selected, hasDarkBackground).AddLayers(cardBackLayer)
+	return cardBackLayer
 }
 
 func playerHandLayer(weapon *game.Card, slain []*game.Card, selected, hasDarkBackground bool) *lipgloss.Layer {
