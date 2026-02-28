@@ -95,8 +95,9 @@ func (m *Model) handleKeyPress(msg tea.KeyPressMsg) {
 		}
 
 	case "down", "j":
-		if m.selectionInRoom() {
+		if m.selectionInRoom() || m.selectedDungeon {
 			m.unselectRoom()
+			m.selectedDungeon = false
 			m.selectedHand = true
 		}
 
