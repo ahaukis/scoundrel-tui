@@ -17,7 +17,7 @@ type mainModel struct {
 
 func InitialMainModel() mainModel {
 	g := game.NewRandomGame()
-	return mainModel{game: g, gameTable: table.New(g), hpBar: hpbar.New(g)}
+	return mainModel{game: g, gameTable: table.New(g), hpBar: hpbar.New(&g.HP)}
 }
 
 func (m mainModel) Init() tea.Cmd {
@@ -59,14 +59,14 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m mainModel) View() tea.View {
-	mainLayer := lipgloss.NewLayer(m.gameTable.View())
-	hpBarLayer := lipgloss.NewLayer(m.hpBar.View()).
-		Y(mainLayer.GetY() + mainLayer.Height())
+	hpBarLayer := lipgloss.NewLayer(m.hpBar.View()).X(1).Y(1)
+	mainLayer := lipgloss.NewLayer(m.gameTable.View()).
+		Y(hpBarLayer.GetY() + hpBarLayer.Height() + 1)
 
 	comp := lipgloss.NewCompositor(hpBarLayer, mainLayer)
 	s := comp.Render() + "\n"
 
-	view := tea.NewView(s) // view := tea.NewView(m.gameTable.View().Content)
+	view := tea.NewView(s)
 	view.AltScreen = true
 	view.WindowTitle = "Scoundrel"
 
