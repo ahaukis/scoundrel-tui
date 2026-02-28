@@ -1,11 +1,13 @@
 package game
 
+import "slices"
+
 // Current state of the Scoundrel game.
 type Game struct {
 	HP                     int
 	Dungeon                []*Card
 	Room                   []*Card
-	LastDiscarded          *Card
+	Discarded              []*Card
 	Weapon                 *Card
 	MonstersSlain          []*Card
 	skippedLastRoom        bool
@@ -18,7 +20,7 @@ func NewGame(d []*Card) *Game {
 		HP:            MaxHP,
 		Dungeon:       d,
 		Room:          make([]*Card, 0),
-		LastDiscarded: nil,
+		Discarded:     make([]*Card, 0),
 		Weapon:        nil,
 		MonstersSlain: make([]*Card, 0),
 	}
@@ -34,15 +36,23 @@ func NewRandomGame() *Game {
 func (g *Game) DealRoom() {
 	for _, c := range g.Room {
 		if c != nil {
-			g.LastDiscarded = c
+			g.Discarded = append(g.Discarded, c)
 		}
 	}
 	g.Room = g.Room[:0]
+
+	if len(g.Dungeon) < CardsPerRoom && len(g.Discarded) > 0 {
+		slices.Reverse(g.Discarded)
+		g.Dungeon = append(g.Discarded, g.Dungeon...)
+		g.Discarded = g.Discarded[:0]
+	}
+
 	for range min(CardsPerRoom, len(g.Dungeon)) {
 		lastIdx := len(g.Dungeon) - 1
 		g.Room = append(g.Room, g.Dungeon[lastIdx])
 		g.Dungeon = g.Dungeon[:lastIdx]
 	}
+
 	if g.skippedLastRoom {
 		g.skippedLastRoom = false
 	}
@@ -51,19 +61,23 @@ func (g *Game) DealRoom() {
 	}
 }
 
-// Skip the current room, placing it at the bottom of the dungeon deck.
-func (g *Game) SkipRoom() {
-	if g.skippedLastRoom {
-		// cannot skip 2 rooms in a row
-		return
-	}
+func (g *Game) nonNilRoomCards() []*Card {
 	var nonNils []*Card
 	for _, c := range g.Room {
 		if c != nil {
 			nonNils = append(nonNils, c)
 		}
 	}
-	g.Dungeon = append(nonNils, g.Dungeon...)
+	return nonNils
+}
+
+// Skip the current room, placing it at the bottom of the dungeon deck.
+func (g *Game) SkipRoom() {
+	if g.skippedLastRoom {
+		// cannot skip 2 rooms in a row
+		return
+	}
+	g.Dungeon = append(g.nonNilRoomCards(), g.Dungeon...)
 	g.DealRoom()
 	g.skippedLastRoom = true
 }
@@ -129,7 +143,7 @@ func (g *Game) UseHealthPotion(roomIdx int) {
 	potionCard := g.Room[roomIdx]
 	g.AddHP(potionCard.IntRank())
 	g.Room[roomIdx] = nil
-	g.LastDiscarded = potionCard
+	g.Discarded = append(g.Discarded, potionCard)
 	g.usedHealthPotionInRoom = true
 }
 
@@ -141,7 +155,7 @@ func (g *Game) TakeWeapon(roomIdx int) {
 		g.MonstersSlain = g.MonstersSlain[:0]
 	}
 	if old := g.Weapon; old != nil {
-		g.LastDiscarded = old
+		g.Discarded = append(g.Discarded, old)
 		g.Weapon = nil
 	}
 
@@ -160,7 +174,7 @@ func (g *Game) AttackMonster(roomIdx int, useWeapon bool) {
 	if g.Weapon != nil && useWeapon && !weaponFailed {
 		g.AddToSlain(m)
 	} else {
-		g.LastDiscarded = m
+		g.Discarded = append(g.Discarded, m)
 	}
 	g.Room[roomIdx] = nil
 	g.RemoveHP(dmg)
