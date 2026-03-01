@@ -73,10 +73,25 @@ func (g *Game) nonNilRoomCards() []*Card {
 
 // Skip the current room, placing it at the bottom of the dungeon deck.
 func (g *Game) SkipRoom() {
+	// cannot skip 2 rooms in a row
 	if g.skippedLastRoom {
-		// cannot skip 2 rooms in a row
 		return
 	}
+	// cannot skip after already enganing a room...
+	if nonNils := g.nonNilRoomCards(); len(nonNils) < CardsPerRoom && len(g.Dungeon) > 0 {
+		// ...unless the only cards left are health potions and cannot be consumed
+		allHealthPotions := true
+		for _, c := range nonNils {
+			if !c.IsHealthPotion() {
+				allHealthPotions = false
+				break
+			}
+		}
+		if !(allHealthPotions && g.usedHealthPotionInRoom) {
+			return
+		}
+	}
+
 	g.Dungeon = append(g.nonNilRoomCards(), g.Dungeon...)
 	g.DealRoom()
 	g.skippedLastRoom = true
