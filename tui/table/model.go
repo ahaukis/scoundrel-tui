@@ -145,8 +145,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) View() string {
 	var discardPile *lipgloss.Layer
-	if disc := m.game.Discarded; len(disc) > 0 {
-		discardPile = m.cardFaceLayer(disc[len(disc)-1], false)
+	if disc := m.game.LastDiscarded; disc != nil {
+		discardPile = m.cardFaceLayer(disc, false)
 	} else {
 		discardPile = m.emptySlotLayer(false)
 	}

@@ -1,13 +1,11 @@
 package game
 
-import "slices"
-
 // Current state of the Scoundrel game.
 type Game struct {
 	HP                     int
 	Dungeon                []*Card
 	Room                   []*Card
-	Discarded              []*Card
+	LastDiscarded          *Card
 	Weapon                 *Card
 	MonstersSlain          []*Card
 	skippedLastRoom        bool
@@ -20,7 +18,7 @@ func NewGame(d []*Card) *Game {
 		HP:            MaxHP,
 		Dungeon:       d,
 		Room:          make([]*Card, 0),
-		Discarded:     make([]*Card, 0),
+		LastDiscarded: nil,
 		Weapon:        nil,
 		MonstersSlain: make([]*Card, 0),
 	}
@@ -36,16 +34,10 @@ func NewRandomGame() *Game {
 func (g *Game) DealRoom() {
 	for _, c := range g.Room {
 		if c != nil {
-			g.Discarded = append(g.Discarded, c)
+			g.LastDiscarded = c
 		}
 	}
 	g.Room = g.Room[:0]
-
-	if len(g.Dungeon) < CardsPerRoom && len(g.Discarded) > 0 {
-		slices.Reverse(g.Discarded)
-		g.Dungeon = append(g.Discarded, g.Dungeon...)
-		g.Discarded = g.Discarded[:0]
-	}
 
 	for range min(CardsPerRoom, len(g.Dungeon)) {
 		lastIdx := len(g.Dungeon) - 1
@@ -158,7 +150,7 @@ func (g *Game) UseHealthPotion(roomIdx int) {
 	potionCard := g.Room[roomIdx]
 	g.AddHP(potionCard.IntRank())
 	g.Room[roomIdx] = nil
-	g.Discarded = append(g.Discarded, potionCard)
+	g.LastDiscarded = potionCard
 	g.usedHealthPotionInRoom = true
 }
 
@@ -170,7 +162,7 @@ func (g *Game) TakeWeapon(roomIdx int) {
 		g.MonstersSlain = g.MonstersSlain[:0]
 	}
 	if old := g.Weapon; old != nil {
-		g.Discarded = append(g.Discarded, old)
+		g.LastDiscarded = old
 		g.Weapon = nil
 	}
 
@@ -189,7 +181,7 @@ func (g *Game) AttackMonster(roomIdx int, useWeapon bool) {
 	if g.Weapon != nil && useWeapon && !weaponFailed {
 		g.AddToSlain(m)
 	} else {
-		g.Discarded = append(g.Discarded, m)
+		g.LastDiscarded = m
 	}
 	g.Room[roomIdx] = nil
 	g.RemoveHP(dmg)
