@@ -4,7 +4,7 @@ package game
 
 const DeckSize = 52
 
-const MinRank Rank = 1
+const MinRank Rank = 2
 const MaxRank Rank = 14
 
 const MinSuit Suit = 0
