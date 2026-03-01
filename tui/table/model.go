@@ -1,6 +1,7 @@
 package table
 
 import (
+	"fmt"
 	"image/color"
 	"strconv"
 	"strings"
@@ -32,16 +33,21 @@ var dashedRoundedBorder = lipgloss.Border{
 }
 
 type Model struct {
-	game              *game.Game
-	selectedRoomIdx   int // -1 if no card in room is currently selected
-	selectedDungeon   bool
-	selectedHand      bool
-	weaponEnabled     bool
-	HasDarkBackground bool
+	game            *game.Game
+	selectedRoomIdx int // -1 if no card in room is currently selected
+	selectedDungeon bool
+	selectedHand    bool
+	weaponEnabled   bool
+	palette         *palette.Palette
 }
 
-func New(g *game.Game) Model {
-	return Model{game: g, selectedRoomIdx: 0, weaponEnabled: true}
+func New(g *game.Game, p *palette.Palette) Model {
+	return Model{
+		game:            g,
+		selectedRoomIdx: 0,
+		weaponEnabled:   true,
+		palette:         p,
+	}
 }
 
 func (m Model) Init() tea.Cmd {
@@ -168,19 +174,13 @@ func (m Model) View() string {
 		currentRoom.AddLayers(cLayer.X((cardWidth + 1) * i))
 	}
 
-	var dungeonPile *lipgloss.Layer
-	if len(m.game.Dungeon) > 0 {
-		dungeonPile = m.cardBackLayer(m.selectedDungeon)
-	} else {
-		dungeonPile = m.emptySlotLayer(m.selectedDungeon)
-	}
-	dungeonPile = dungeonPile.X(currentRoom.GetX() + currentRoom.Width() + 5)
+	dungeonPile := m.dungeonPileLayer().X(currentRoom.GetX() + currentRoom.Width() + 5)
 
 	topRow := lipgloss.NewLayer("", discardPile, currentRoom, dungeonPile)
 
 	playerHand := m.playerHandLayer(m.game.Weapon, m.game.MonstersSlain, m.selectedHand).
 		X(topRow.GetX() + (topRow.Width()-cardWidth)/2).
-		Y(topRow.GetY() + topRow.Height() + 1)
+		Y(currentRoom.GetY() + currentRoom.Height() + 1)
 
 	comp := lipgloss.NewCompositor(topRow, playerHand)
 	s := comp.Render()
@@ -189,16 +189,12 @@ func (m Model) View() string {
 	return s
 }
 
-func (m *Model) lightDark(colors [2]color.Color) color.Color {
-	return lipgloss.LightDark(m.HasDarkBackground)(colors[0], colors[1])
-}
-
 func (m *Model) cardBorderStyle(selected bool) lipgloss.Style {
 	var col color.Color
 	if selected {
-		col = m.lightDark(palette.Colors["selectedBorder"])
+		col = m.palette.SelectedBorder
 	} else {
-		col = m.lightDark(palette.Colors["border"])
+		col = m.palette.Border
 	}
 	bStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
@@ -212,9 +208,9 @@ func (m *Model) cardBorderStyle(selected bool) lipgloss.Style {
 func (m *Model) emptySlotLayer(selected bool) *lipgloss.Layer {
 	var col color.Color
 	if selected {
-		col = m.lightDark(palette.Colors["selectedEmptyBorder"])
+		col = m.palette.SelectedEmptyBorder
 	} else {
-		col = m.lightDark(palette.Colors["emptyBorder"])
+		col = m.palette.EmptyBorder
 	}
 
 	bStyle := lipgloss.NewStyle().
@@ -230,9 +226,9 @@ func (m *Model) emptySlotLayer(selected bool) *lipgloss.Layer {
 func (m *Model) cardFaceLayer(card *game.Card, selected bool) *lipgloss.Layer {
 	var col color.Color
 	if card.Suit.IsRed() {
-		col = m.lightDark(palette.Colors["redSuit"])
+		col = m.palette.RedSuit
 	} else {
-		col = m.lightDark(palette.Colors["blackSuit"])
+		col = m.palette.BlackSuit
 	}
 
 	s := card.String()
@@ -265,7 +261,7 @@ func (m *Model) cardBackLayer(selected bool) *lipgloss.Layer {
 	}
 
 	backStyle := m.cardBorderStyle(selected).
-		Foreground(m.lightDark(palette.Colors["cardBack"])).
+		Foreground(m.palette.CardBack).
 		Render(sBuilder.String())
 
 	cardBackLayer := lipgloss.NewLayer(backStyle)
@@ -286,4 +282,25 @@ func (m *Model) playerHandLayer(weapon *game.Card, slain []*game.Card, selected 
 	}
 
 	return playerHand
+}
+
+func (m *Model) dungeonPileLayer() *lipgloss.Layer {
+	lenDungeon := len(m.game.Dungeon)
+
+	var dungeonPile *lipgloss.Layer
+	if lenDungeon > 0 {
+		dungeonPile = m.cardBackLayer(m.selectedDungeon)
+	} else {
+		dungeonPile = m.emptySlotLayer(m.selectedDungeon)
+	}
+
+	txt := lipgloss.NewStyle().
+		Foreground(m.palette.Border).
+		AlignHorizontal(lipgloss.Right).
+		Width(dungeonPile.Width()).
+		Render(fmt.Sprintf("%2d left", lenDungeon))
+
+	dungeonPile = lipgloss.NewLayer(dungeonPile.GetContent() + "\n" + txt)
+
+	return dungeonPile
 }

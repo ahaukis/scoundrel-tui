@@ -14,27 +14,30 @@ import (
 type Model struct {
 	hp      *int
 	progBar progress.Model
+	palette *palette.Palette
 }
 
-func New(hp *int) Model {
+func New(hp *int, palette *palette.Palette) Model {
 	progBar := progress.New(
 		progress.WithFillCharacters('|', '·'),
 		progress.WithWidth(20),
 		progress.WithoutPercentage(),
-		progress.WithColorFunc(progBarColor),
+		progress.WithColorFunc(progBarColorFunc(palette)),
 	)
-	progBar.EmptyColor = palette.Colors["emptyBorder"][1]
+	progBar.EmptyColor = palette.EmptyBorder
 
-	return Model{hp, progBar}
+	return Model{hp, progBar, palette}
 }
 
-func progBarColor(total, current float64) color.Color {
-	if total > 0.5 {
-		return lipgloss.BrightGreen
-	} else if total > 0.25 {
-		return lipgloss.BrightYellow
-	} else {
-		return lipgloss.BrightRed
+func progBarColorFunc(palette *palette.Palette) func(total, current float64) color.Color {
+	return func(total, current float64) color.Color {
+		if total > 0.5 {
+			return palette.HPFull
+		} else if total > 0.25 {
+			return palette.HPMid
+		} else {
+			return palette.HPLow
+		}
 	}
 }
 
@@ -53,7 +56,8 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) View() string {
 	p := float64(*m.hp) / float64(game.MaxHP)
-	s := fmt.Sprintf("HP %2d/%2d ", *m.hp, game.MaxHP) + m.progBar.ViewAs(p)
+	lbl := lipgloss.NewStyle().Foreground(m.palette.Border).Render(
+		fmt.Sprintf("HP %2d/%2d ", *m.hp, game.MaxHP))
 
-	return s
+	return lbl + m.progBar.ViewAs(p)
 }

@@ -5,19 +5,26 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/ahaukis/scoundrel-tui/game"
 	hpbar "github.com/ahaukis/scoundrel-tui/tui/hp_bar"
+	"github.com/ahaukis/scoundrel-tui/tui/palette"
 	"github.com/ahaukis/scoundrel-tui/tui/table"
 )
 
 type mainModel struct {
-	game              *game.Game
-	gameTable         table.Model
-	hpBar             hpbar.Model
-	hasDarkBackground bool
+	game      *game.Game
+	gameTable table.Model
+	hpBar     hpbar.Model
+	palette   *palette.Palette
 }
 
 func InitialMainModel() mainModel {
 	g := game.NewRandomGame()
-	return mainModel{game: g, gameTable: table.New(g), hpBar: hpbar.New(&g.HP)}
+	p := palette.NewDark()
+	return mainModel{
+		game:      g,
+		gameTable: table.New(g, &p),
+		hpBar:     hpbar.New(&g.HP, &p),
+		palette:   &p,
+	}
 }
 
 func (m mainModel) Init() tea.Cmd {
@@ -42,9 +49,11 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.BackgroundColorMsg:
-		// set background color based on
-		m.hasDarkBackground = msg.IsDark()
-		m.gameTable.HasDarkBackground = m.hasDarkBackground
+		if msg.IsDark() {
+			*m.palette = palette.NewDark()
+		} else {
+			*m.palette = palette.NewLight()
+		}
 	case tea.KeyPressMsg:
 		if s := msg.String(); s == "ctrl+c" || s == "q" {
 			return m, tea.Quit
