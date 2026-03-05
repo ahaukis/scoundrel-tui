@@ -30,6 +30,14 @@ func NewRandomGame() *Game {
 	return NewGame(d)
 }
 
+func (g *Game) Lost() bool {
+	return g.HP <= 0
+}
+
+func (g *Game) Won() bool {
+	return g.HP > 0 && len(g.nonNilRoomCards()) == 0 && len(g.Dungeon) == 0
+}
+
 // Clear the existing room and deal a new one from the dungeon deck.
 func (g *Game) DealRoom() {
 	for _, c := range g.Room {

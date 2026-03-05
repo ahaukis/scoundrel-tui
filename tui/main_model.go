@@ -10,20 +10,24 @@ import (
 )
 
 type mainModel struct {
-	game      *game.Game
-	gameTable table.Model
-	hpBar     hpbar.Model
-	palette   *palette.Palette
+	game           *game.Game
+	palette        *palette.Palette
+	gameTable      table.Model
+	hpBar          hpbar.Model
+	gameInProgress bool
+	gameLost       bool
+	gameWon        bool
 }
 
 func InitialMainModel() mainModel {
 	g := game.NewRandomGame()
 	p := palette.NewDark()
 	return mainModel{
-		game:      g,
-		gameTable: table.New(g, &p),
-		hpBar:     hpbar.New(&g.HP, &p),
-		palette:   &p,
+		game:           g,
+		palette:        &p,
+		gameTable:      table.New(g, &p),
+		hpBar:          hpbar.New(&g.HP, &p),
+		gameInProgress: true,
 	}
 }
 
@@ -37,16 +41,6 @@ func (m mainModel) Init() tea.Cmd {
 }
 
 func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-
-	tModel, tableCmd := m.gameTable.Update(msg)
-	m.gameTable = tModel
-	cmds = append(cmds, tableCmd)
-
-	hpModel, hpCmd := m.hpBar.Update(msg)
-	m.hpBar = hpModel
-	cmds = append(cmds, hpCmd)
-
 	switch msg := msg.(type) {
 	case tea.BackgroundColorMsg:
 		if msg.IsDark() {
@@ -60,14 +54,68 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	var cmd tea.Cmd
+
+	if !m.gameInProgress {
+		cmd = m.updateMenu(msg)
+	} else {
+		cmd = m.updateGame(msg)
+		m.gameWon = m.game.Won()
+		m.gameLost = m.game.Lost()
+		m.gameInProgress = !(m.gameWon || m.gameLost)
+	}
+
+	return m, cmd
+}
+
+func (m *mainModel) updateGame(msg tea.Msg) tea.Cmd {
+	var cmds []tea.Cmd
+
+	tModel, tableCmd := m.gameTable.Update(msg)
+	m.gameTable = tModel
+	cmds = append(cmds, tableCmd)
+
+	hpModel, hpCmd := m.hpBar.Update(msg)
+	m.hpBar = hpModel
+	cmds = append(cmds, hpCmd)
+
+	m.gameWon = m.game.Won()
+	m.gameLost = m.game.Lost()
+
 	if m.game.IsRoomDone() {
 		m.game.DealRoom()
 	}
 
-	return m, tea.Batch(cmds...)
+	return tea.Batch(cmds...)
+}
+
+func (m *mainModel) updateMenu(msg tea.Msg) tea.Cmd {
+	switch msg.(type) {
+	case tea.KeyPressMsg:
+		// any key press starts a new game
+		m.gameInProgress = true
+		m.gameWon = false
+		m.gameLost = false
+		m.game = game.NewRandomGame()
+	}
+	return nil
 }
 
 func (m mainModel) View() tea.View {
+	var s string
+	if m.gameInProgress {
+		s = m.viewGame()
+	} else {
+		s = m.viewMenu()
+	}
+	view := tea.NewView(s)
+	view.AltScreen = true
+	view.WindowTitle = "Scoundrel"
+
+	return view
+}
+
+func (m *mainModel) viewGame() string {
 	hpBarLayer := lipgloss.NewLayer(m.hpBar.View()).X(1).Y(1)
 	mainLayer := lipgloss.NewLayer(m.gameTable.View()).
 		Y(hpBarLayer.GetY() + hpBarLayer.Height() + 1)
@@ -75,9 +123,13 @@ func (m mainModel) View() tea.View {
 	comp := lipgloss.NewCompositor(hpBarLayer, mainLayer)
 	s := comp.Render() + "\n"
 
-	view := tea.NewView(s)
-	view.AltScreen = true
-	view.WindowTitle = "Scoundrel"
+	return s
+}
 
-	return view
+func (m *mainModel) viewMenu() string {
+	if m.gameWon {
+		return "You won!"
+	} else {
+		return "You lost!"
+	}
 }
