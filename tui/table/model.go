@@ -146,7 +146,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 func (m Model) View() string {
 	var discardPile *lipgloss.Layer
 	if disc := m.game.LastDiscarded; disc != nil {
-		discardPile = m.cardFaceLayer(disc, false)
+		discardPile = m.cardFaceLayer(disc, false, true)
 	} else {
 		discardPile = m.emptySlotLayer(false)
 	}
@@ -167,7 +167,7 @@ func (m Model) View() string {
 		var cLayer *lipgloss.Layer
 		selected := m.selectedRoomIdx == i
 		if c != nil {
-			cLayer = m.cardFaceLayer(c, selected)
+			cLayer = m.cardFaceLayer(c, selected, true)
 		} else {
 			cLayer = m.emptySlotLayer(selected)
 		}
@@ -178,7 +178,7 @@ func (m Model) View() string {
 
 	topRow := lipgloss.NewLayer("", discardPile, currentRoom, dungeonPile)
 
-	playerHand := m.playerHandLayer(m.game.Weapon, m.game.MonstersSlain, m.selectedHand).
+	playerHand := m.playerHandLayer(m.game.Weapon, m.game.MonstersSlain, m.selectedHand, m.weaponEnabled).
 		X(topRow.GetX() + (topRow.Width()-cardWidth)/2).
 		Y(currentRoom.GetY() + currentRoom.Height() + 1)
 
@@ -189,13 +189,19 @@ func (m Model) View() string {
 	return s
 }
 
-func (m *Model) cardBorderStyle(selected bool) lipgloss.Style {
+func (m *Model) cardBorderStyle(selected, active bool) lipgloss.Style {
 	var col color.Color
-	if selected {
+	switch {
+	case selected && active:
 		col = m.palette.SelectedBorder
-	} else {
+	case selected && !active:
+		col = m.palette.SelectedEmptyBorder
+	case !selected && active:
 		col = m.palette.Border
+	default:
+		col = m.palette.EmptyBorder
 	}
+
 	bStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(col).
@@ -223,7 +229,7 @@ func (m *Model) emptySlotLayer(selected bool) *lipgloss.Layer {
 	return lipgloss.NewLayer(bStyle)
 }
 
-func (m *Model) cardFaceLayer(card *game.Card, selected bool) *lipgloss.Layer {
+func (m *Model) cardFaceLayer(card *game.Card, selected, active bool) *lipgloss.Layer {
 	var col color.Color
 	if card.Suit.IsRed() {
 		col = m.palette.RedSuit
@@ -241,12 +247,12 @@ func (m *Model) cardFaceLayer(card *game.Card, selected bool) *lipgloss.Layer {
 		X(cardWidth - lipgloss.Width(s) - 1).
 		Y(cardHeight - 2)
 
-	bLayer := m.cardBorderStyle(selected).Render()
+	bLayer := m.cardBorderStyle(selected, active).Render()
 
 	return lipgloss.NewLayer(bLayer, txtLayer1, txtLayer2)
 }
 
-func (m *Model) cardBackLayer(selected bool) *lipgloss.Layer {
+func (m *Model) cardBackLayer(selected, active bool) *lipgloss.Layer {
 	sBuilder := strings.Builder{}
 	rows := cardHeight - 2
 	columns := cardWidth - 2
@@ -260,7 +266,7 @@ func (m *Model) cardBackLayer(selected bool) *lipgloss.Layer {
 		}
 	}
 
-	backStyle := m.cardBorderStyle(selected).
+	backStyle := m.cardBorderStyle(selected, active).
 		Foreground(m.palette.CardBack).
 		Render(sBuilder.String())
 
@@ -269,15 +275,15 @@ func (m *Model) cardBackLayer(selected bool) *lipgloss.Layer {
 	return cardBackLayer
 }
 
-func (m *Model) playerHandLayer(weapon *game.Card, slain []*game.Card, selected bool) *lipgloss.Layer {
+func (m *Model) playerHandLayer(weapon *game.Card, slain []*game.Card, selected, active bool) *lipgloss.Layer {
 	if weapon == nil {
 		return m.emptySlotLayer(selected)
 	}
 
-	playerHand := lipgloss.NewLayer("", m.cardFaceLayer(weapon, selected))
+	playerHand := lipgloss.NewLayer("", m.cardFaceLayer(weapon, selected, active))
 
 	for i, s := range slain {
-		sLayer := m.cardFaceLayer(s, selected).Y(2 * (i + 1))
+		sLayer := m.cardFaceLayer(s, selected, active).Y(2 * (i + 1))
 		playerHand.AddLayers(sLayer)
 	}
 
@@ -289,7 +295,7 @@ func (m *Model) dungeonPileLayer() *lipgloss.Layer {
 
 	var dungeonPile *lipgloss.Layer
 	if lenDungeon > 0 {
-		dungeonPile = m.cardBackLayer(m.selectedDungeon)
+		dungeonPile = m.cardBackLayer(m.selectedDungeon, m.game.CanSkipRoom())
 	} else {
 		dungeonPile = m.emptySlotLayer(m.selectedDungeon)
 	}
