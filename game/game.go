@@ -35,7 +35,7 @@ func (g *Game) Lost() bool {
 }
 
 func (g *Game) Won() bool {
-	return g.HP > 0 && len(g.nonNilRoomCards()) == 0 && len(g.Dungeon) == 0
+	return g.HP > 0 && len(g.NonNilRoomCards()) == 0 && len(g.Dungeon) == 0
 }
 
 // Clear the existing room and deal a new one from the dungeon deck.
@@ -64,7 +64,8 @@ func (g *Game) DealRoom() {
 	}
 }
 
-func (g *Game) nonNilRoomCards() []*Card {
+// Get the current room cards that are not nils.
+func (g *Game) NonNilRoomCards() []*Card {
 	var nonNils []*Card
 	for _, c := range g.Room {
 		if c != nil {
@@ -81,7 +82,7 @@ func (g *Game) SkipRoom() {
 		return
 	}
 	// cannot skip after already enganing a room...
-	if nonNils := g.nonNilRoomCards(); len(nonNils) < CardsPerRoom && len(g.Dungeon) > 0 {
+	if nonNils := g.NonNilRoomCards(); len(nonNils) < CardsPerRoom && len(g.Dungeon) > 0 {
 		// ...unless the only cards left are health potions and cannot be consumed
 		allHealthPotions := true
 		for _, c := range nonNils {
@@ -95,7 +96,7 @@ func (g *Game) SkipRoom() {
 		}
 	}
 
-	g.Dungeon = append(g.nonNilRoomCards(), g.Dungeon...)
+	g.Dungeon = append(g.NonNilRoomCards(), g.Dungeon...)
 	g.DealRoom()
 	g.skippedLastRoom = true
 }

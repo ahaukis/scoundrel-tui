@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"fmt"
+
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/ahaukis/scoundrel-tui/game"
@@ -14,6 +16,8 @@ type mainModel struct {
 	palette        *palette.Palette
 	gameTable      table.Model
 	hpBar          hpbar.Model
+	windowHeight   int
+	windowWidth    int
 	gameInProgress bool
 	gameLost       bool
 	gameWon        bool
@@ -48,6 +52,9 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			*m.palette = palette.NewLight()
 		}
+	case tea.WindowSizeMsg:
+		m.windowHeight = msg.Height
+		m.windowWidth = msg.Width
 	case tea.KeyPressMsg:
 		if s := msg.String(); s == "ctrl+c" || s == "q" {
 			return m, tea.Quit
@@ -128,9 +135,13 @@ func (m *mainModel) viewGame() string {
 }
 
 func (m *mainModel) viewMenu() string {
+	var s string
 	if m.gameWon {
-		return "You won!"
+		s = fmt.Sprintf("You won with %d HP left!", m.game.HP)
 	} else {
-		return "You lost!"
+		s = fmt.Sprintf("You lost! There were %d cards left.", len(m.game.NonNilRoomCards())+len(m.game.Dungeon))
 	}
+	s += "\n\nPress q to quit."
+	s += "\nPress any other key for a new game."
+	return lipgloss.Place(m.windowWidth, m.windowHeight, lipgloss.Center, lipgloss.Center, s)
 }
