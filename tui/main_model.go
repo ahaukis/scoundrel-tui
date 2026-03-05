@@ -96,7 +96,8 @@ func (m *mainModel) updateMenu(msg tea.Msg) tea.Cmd {
 		m.gameInProgress = true
 		m.gameWon = false
 		m.gameLost = false
-		m.game = game.NewRandomGame()
+		*m.game = *game.NewRandomGame()
+		return m.gameTable.Init()
 	}
 	return nil
 }
