@@ -6,9 +6,11 @@ import (
 	"strconv"
 	"strings"
 
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/ahaukis/scoundrel-tui/game"
+	keymap "github.com/ahaukis/scoundrel-tui/tui/key_map"
 	"github.com/ahaukis/scoundrel-tui/tui/palette"
 )
 
@@ -71,49 +73,46 @@ func (m *Model) toggleWeapon() {
 }
 
 // Handle a key press that doesn't need to return its own message.
-func (m *Model) handleKeyPress(msg tea.KeyPressMsg) {
-	msgString := msg.String()
-
-	// handle 1,2,...
-	if i, err := strconv.Atoi(msgString); err == nil {
-		if 1 <= i && i <= game.CardsPerRoom {
-			m.selectedRoomIdx = i - 1
-			m.game.MakeRoomAction(m.selectedRoomIdx, m.weaponEnabled)
-			return
+func (m *Model) handleKeyPress(msg tea.KeyPressMsg, keys keymap.KeyMap) {
+	switch {
+	case key.Matches(msg, keys.SelectInRoom):
+		i, err := strconv.Atoi(msg.String())
+		if err != nil {
+			panic(fmt.Errorf("invalid index: %w", err))
 		}
-	}
+		if i < 1 || i > game.CardsPerRoom {
+			panic(fmt.Errorf("card index out of range: %d", i))
+		}
+		m.selectedRoomIdx = i - 1
+		m.game.MakeRoomAction(m.selectedRoomIdx, m.weaponEnabled)
 
-	switch msgString {
-	case "left", "h":
+	case key.Matches(msg, keys.Left):
 		if m.selectedDungeon {
 			m.selectedDungeon = false
 			m.selectedRoomIdx = game.CardsPerRoom - 1
 		} else if m.selectedRoomIdx > 0 {
 			m.selectedRoomIdx--
 		}
-
-	case "right", "l":
+	case key.Matches(msg, keys.Right):
 		if m.selectedRoomIdx == game.CardsPerRoom-1 {
 			m.unselectRoom()
 			m.selectedDungeon = true
 		} else if m.selectionInRoom() {
 			m.selectedRoomIdx++
 		}
-
-	case "down", "j":
+	case key.Matches(msg, keys.Down):
 		if m.selectionInRoom() || m.selectedDungeon {
 			m.unselectRoom()
 			m.selectedDungeon = false
 			m.selectedHand = true
 		}
-
-	case "up", "k":
+	case key.Matches(msg, keys.Up):
 		if m.selectedHand {
 			m.selectedHand = false
 			m.selectedRoomIdx = 0
 		}
 
-	case "space", "enter":
+	case key.Matches(msg, keys.Interact):
 		if m.selectionInRoom() {
 			m.game.MakeRoomAction(m.selectedRoomIdx, m.weaponEnabled)
 		} else if m.selectedDungeon {
@@ -121,19 +120,16 @@ func (m *Model) handleKeyPress(msg tea.KeyPressMsg) {
 		} else if m.selectedHand {
 			m.toggleWeapon()
 		}
-
-	case "w":
+	case key.Matches(msg, keys.ToggleWeapon):
 		m.toggleWeapon()
-
-	case "s":
+	case key.Matches(msg, keys.SkipRoom):
 		m.game.SkipRoom()
-
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg, keys keymap.KeyMap) (Model, tea.Cmd) {
 	if keyPressMsg, ok := msg.(tea.KeyPressMsg); ok {
-		m.handleKeyPress(keyPressMsg)
+		m.handleKeyPress(keyPressMsg, keys)
 	}
 
 	if m.game.IsRoomDone() {

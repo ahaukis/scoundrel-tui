@@ -3,10 +3,13 @@ package tui
 import (
 	"fmt"
 
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/ahaukis/scoundrel-tui/game"
 	hpbar "github.com/ahaukis/scoundrel-tui/tui/hp_bar"
+	keymap "github.com/ahaukis/scoundrel-tui/tui/key_map"
 	"github.com/ahaukis/scoundrel-tui/tui/palette"
 	"github.com/ahaukis/scoundrel-tui/tui/table"
 )
@@ -16,6 +19,8 @@ type mainModel struct {
 	palette        *palette.Palette
 	gameTable      table.Model
 	hpBar          hpbar.Model
+	help           help.Model
+	keys           keymap.KeyMap
 	windowHeight   int
 	windowWidth    int
 	gameInProgress bool
@@ -31,6 +36,8 @@ func InitialMainModel() mainModel {
 		palette:        &p,
 		gameTable:      table.New(g, &p),
 		hpBar:          hpbar.New(&g.HP, &p),
+		help:           help.New(),
+		keys:           keymap.New(),
 		gameInProgress: true,
 	}
 }
@@ -55,8 +62,10 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.windowHeight = msg.Height
 		m.windowWidth = msg.Width
+		m.help.SetWidth(m.windowWidth)
 	case tea.KeyPressMsg:
-		if s := msg.String(); s == "ctrl+c" || s == "q" {
+		switch {
+		case key.Matches(msg, m.keys.Quit):
 			return m, tea.Quit
 		}
 	}
@@ -78,7 +87,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *mainModel) updateGame(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
 
-	tModel, tableCmd := m.gameTable.Update(msg)
+	tModel, tableCmd := m.gameTable.Update(msg, m.keys)
 	m.gameTable = tModel
 	cmds = append(cmds, tableCmd)
 
