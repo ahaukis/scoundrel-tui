@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
@@ -65,6 +66,8 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.help.SetWidth(m.windowWidth)
 	case tea.KeyPressMsg:
 		switch {
+		case key.Matches(msg, m.keys.Help):
+			m.help.ShowAll = !m.help.ShowAll
 		case key.Matches(msg, m.keys.Quit):
 			return m, tea.Quit
 		}
@@ -121,10 +124,14 @@ func (m *mainModel) updateMenu(msg tea.Msg) tea.Cmd {
 func (m mainModel) View() tea.View {
 	var s string
 	if m.gameInProgress {
-		s = m.viewGame()
+		gameView := m.viewGame() + "\n"
+		helpView := m.help.View(m.keys) + "\n"
+		height := m.windowHeight - strings.Count(gameView, "\n") - strings.Count(helpView, "\n")
+		s = gameView + strings.Repeat("\n", max(0, height)) + helpView
 	} else {
 		s = m.viewMenu()
 	}
+
 	view := tea.NewView(s)
 	view.AltScreen = true
 	view.WindowTitle = "Scoundrel"
@@ -138,7 +145,7 @@ func (m *mainModel) viewGame() string {
 		Y(hpBarLayer.GetY() + hpBarLayer.Height() + 1)
 
 	comp := lipgloss.NewCompositor(hpBarLayer, mainLayer)
-	s := comp.Render() + "\n"
+	s := comp.Render()
 
 	return s
 }
