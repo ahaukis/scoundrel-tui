@@ -52,6 +52,9 @@ func (g *Game) DealRoom() {
 		g.Room = append(g.Room, g.Dungeon[lastIdx])
 		g.Dungeon = g.Dungeon[:lastIdx]
 	}
+	for range max(0, len(g.Room)-CardsPerRoom) {
+		g.Room = append(g.Room, nil)
+	}
 
 	if g.skippedLastRoom {
 		g.skippedLastRoom = false
