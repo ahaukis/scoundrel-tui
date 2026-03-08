@@ -10,7 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/ahaukis/scoundrel-tui/game"
-	keymap "github.com/ahaukis/scoundrel-tui/tui/key_map"
+	keymap "github.com/ahaukis/scoundrel-tui/tui/keymap"
 	"github.com/ahaukis/scoundrel-tui/tui/palette"
 )
 

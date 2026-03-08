@@ -9,13 +9,13 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/ahaukis/scoundrel-tui/game"
-	hpbar "github.com/ahaukis/scoundrel-tui/tui/hp_bar"
-	keymap "github.com/ahaukis/scoundrel-tui/tui/key_map"
+	hpbar "github.com/ahaukis/scoundrel-tui/tui/hpbar"
+	keymap "github.com/ahaukis/scoundrel-tui/tui/keymap"
 	"github.com/ahaukis/scoundrel-tui/tui/palette"
 	"github.com/ahaukis/scoundrel-tui/tui/table"
 )
 
-type mainModel struct {
+type model struct {
 	game           *game.Game
 	palette        *palette.Palette
 	gameTable      table.Model
@@ -29,10 +29,10 @@ type mainModel struct {
 	gameWon        bool
 }
 
-func InitialMainModel() mainModel {
+func InitialModel() model {
 	g := game.NewRandomGame()
 	p := palette.NewDark()
-	return mainModel{
+	return model{
 		game:           g,
 		palette:        &p,
 		gameTable:      table.New(g, &p),
@@ -43,7 +43,7 @@ func InitialMainModel() mainModel {
 	}
 }
 
-func (m mainModel) Init() tea.Cmd {
+func (m model) Init() tea.Cmd {
 	var cmds []tea.Cmd
 	cmds = append(cmds, tea.RequestBackgroundColor)
 	cmds = append(cmds, m.gameTable.Init())
@@ -52,7 +52,7 @@ func (m mainModel) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.BackgroundColorMsg:
 		if msg.IsDark() {
@@ -87,7 +87,7 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *mainModel) updateGame(msg tea.Msg) tea.Cmd {
+func (m *model) updateGame(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
 
 	tModel, tableCmd := m.gameTable.Update(msg, m.keys)
@@ -108,7 +108,7 @@ func (m *mainModel) updateGame(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m *mainModel) updateMenu(msg tea.Msg) tea.Cmd {
+func (m *model) updateMenu(msg tea.Msg) tea.Cmd {
 	switch msg.(type) {
 	case tea.KeyPressMsg:
 		// any key press starts a new game
@@ -121,7 +121,7 @@ func (m *mainModel) updateMenu(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
-func (m mainModel) View() tea.View {
+func (m model) View() tea.View {
 	var s string
 	if m.gameInProgress {
 		gameView := m.viewGame() + "\n"
@@ -139,7 +139,7 @@ func (m mainModel) View() tea.View {
 	return view
 }
 
-func (m *mainModel) viewGame() string {
+func (m *model) viewGame() string {
 	hpBarLayer := lipgloss.NewLayer(m.hpBar.View()).X(1).Y(1)
 	mainLayer := lipgloss.NewLayer(m.gameTable.View()).
 		Y(hpBarLayer.GetY() + hpBarLayer.Height() + 1)
@@ -150,7 +150,7 @@ func (m *mainModel) viewGame() string {
 	return s
 }
 
-func (m *mainModel) viewMenu() string {
+func (m *model) viewMenu() string {
 	var s string
 	if m.gameWon {
 		s = fmt.Sprintf("You won with %d HP left!", m.game.HP)
