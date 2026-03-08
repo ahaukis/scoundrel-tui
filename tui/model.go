@@ -52,6 +52,24 @@ func (m model) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+func (m *model) setHelpStyles() {
+	faintText := lipgloss.NewStyle().Foreground(m.palette.EmptyBorder)
+	clearText := lipgloss.NewStyle().Foreground(m.palette.Border)
+
+	styles := help.Styles{
+		ShortKey:       faintText,
+		ShortDesc:      faintText,
+		ShortSeparator: faintText,
+		Ellipsis:       faintText,
+		FullKey:        clearText,
+		FullDesc:       clearText,
+		FullSeparator:  clearText,
+	}
+
+	m.help.Styles = styles
+
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.BackgroundColorMsg:
@@ -60,6 +78,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			*m.palette = palette.NewLight()
 		}
+		m.setHelpStyles()
 	case tea.WindowSizeMsg:
 		m.windowHeight = msg.Height
 		m.windowWidth = msg.Width
