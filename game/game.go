@@ -81,7 +81,7 @@ func (g *Game) CanSkipRoom() bool {
 	if g.skippedLastRoom {
 		return false
 	}
-	// cannot skip after already enganing a room...
+	// cannot skip after already engaging a room...
 	if nonNils := g.NonNilRoomCards(); len(nonNils) < CardsPerRoom && len(g.Dungeon) > 0 {
 		// ...unless the only cards left are health potions and cannot be consumed
 		allHealthPotions := true
