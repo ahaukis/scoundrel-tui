@@ -164,7 +164,7 @@ func (g *Game) MakeRoomAction(roomIdx int, useWeapon bool) {
 // Use and discard a health potion card. roomIdx is the card's index in the current room.
 func (g *Game) UseHealthPotion(roomIdx int) {
 	if g.usedHealthPotionInRoom {
-		// can only ue 1 health potion per room
+		// can only use 1 health potion per room
 		return
 	}
 	potionCard := g.Room[roomIdx]
@@ -190,6 +190,7 @@ func (g *Game) TakeWeapon(roomIdx int) {
 	g.Room[roomIdx] = nil
 }
 
+// AttackMonster attacks the monster card at the given room index.
 func (g *Game) AttackMonster(roomIdx int, useWeapon bool) {
 	m := g.Room[roomIdx]
 	dmg, weaponFailed := g.calculateDamage(m, useWeapon)
@@ -208,6 +209,10 @@ func (g *Game) AttackMonster(roomIdx int, useWeapon bool) {
 }
 
 // Calculate the damage that would be taken by attacking the monster card. Does not affect HP or the room.
+//
+// Returns:
+//   - Damage taken value
+//   - If the weapon use failed.
 func (g *Game) calculateDamage(monster *Card, useWeapon bool) (int, bool) {
 	fullDamage := monster.IntRank()
 

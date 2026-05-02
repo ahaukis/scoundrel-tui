@@ -1,24 +1,20 @@
 package game
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestFullDeckSize(t *testing.T) {
 	deck := NewFullDeck()
-	size := len(deck)
+	assert.Len(t, deck, DeckSize)
 
-	if size != DeckSize {
-		t.Errorf("Expected %d cards, got %d", DeckSize, size)
-	}
 }
 
 func TestScoundrelDeckSize(t *testing.T) {
 	deck := NewScoundrelDeck()
-	size := len(deck)
-	scoundrel_size := DeckSize - 8
-
-	if size != scoundrel_size {
-		t.Errorf("Expected %d cards, got %d", scoundrel_size, size)
-	}
+	assert.Len(t, deck, DeckSize-8)
 }
 
 func TestShuffleDeck(t *testing.T) {
@@ -36,7 +32,5 @@ func TestShuffleDeck(t *testing.T) {
 		}
 	}
 
-	if sameOrder {
-		t.Errorf("Shuffled decks are the same!")
-	}
+	assert.False(t, sameOrder, "Shuffled decks are the same!")
 }
