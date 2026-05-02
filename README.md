@@ -4,6 +4,13 @@
 
 The Scoundrel card game was developed by Zach Gage and Kurt Bieg. For detailed rules and more information on the card game itself, see the [BoardGameGeek page](https://boardgamegeek.com/boardgame/191095/scoundrel) and the [rules document](http://stfj.net/art/2011/Scoundrel.pdf).
 
+<table>
+  <tr align="middle">
+    <td><img src="docs/screenshot-dark.png" alt="Dark theme" width="90%"></td>
+    <td><img src="docs/screenshot-light.png" alt="Light theme" width="90%"></td>
+  </tr>
+</table>
+
 ## Installation
 
 For installation, use `go install`:
