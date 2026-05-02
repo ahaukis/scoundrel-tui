@@ -9,7 +9,7 @@ The Scoundrel card game was developed by Zach Gage and Kurt Bieg. For detailed r
 For installation, use `go install`:
 
 ```
-go install github.com/ahaukis/scoundrel-tui
+go install github.com/ahaukis/scoundrel-tui@latest
 ```
 
 > Alternatively, you can clone the repository and run `make install`.
