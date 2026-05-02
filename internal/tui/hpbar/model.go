@@ -7,8 +7,8 @@ import (
 	"charm.land/bubbles/v2/progress"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/ahaukis/scoundrel-tui/game"
-	"github.com/ahaukis/scoundrel-tui/tui/palette"
+	"github.com/ahaukis/scoundrel-tui/internal/game"
+	"github.com/ahaukis/scoundrel-tui/internal/tui/palette"
 )
 
 type Model struct {

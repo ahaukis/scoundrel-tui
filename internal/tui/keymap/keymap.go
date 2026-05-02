@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"charm.land/bubbles/v2/key"
-	"github.com/ahaukis/scoundrel-tui/game"
+	"github.com/ahaukis/scoundrel-tui/internal/game"
 )
 
 type KeyMap struct {

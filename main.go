@@ -5,7 +5,7 @@ import (
 	"os"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/ahaukis/scoundrel-tui/tui"
+	"github.com/ahaukis/scoundrel-tui/internal/tui"
 )
 
 func main() {

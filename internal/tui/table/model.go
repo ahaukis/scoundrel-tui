@@ -9,9 +9,9 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/ahaukis/scoundrel-tui/game"
-	keymap "github.com/ahaukis/scoundrel-tui/tui/keymap"
-	"github.com/ahaukis/scoundrel-tui/tui/palette"
+	"github.com/ahaukis/scoundrel-tui/internal/game"
+	keymap "github.com/ahaukis/scoundrel-tui/internal/tui/keymap"
+	"github.com/ahaukis/scoundrel-tui/internal/tui/palette"
 )
 
 const cardHeight = 6

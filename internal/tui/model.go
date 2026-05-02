@@ -8,11 +8,11 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/ahaukis/scoundrel-tui/game"
-	hpbar "github.com/ahaukis/scoundrel-tui/tui/hpbar"
-	keymap "github.com/ahaukis/scoundrel-tui/tui/keymap"
-	"github.com/ahaukis/scoundrel-tui/tui/palette"
-	"github.com/ahaukis/scoundrel-tui/tui/table"
+	"github.com/ahaukis/scoundrel-tui/internal/game"
+	hpbar "github.com/ahaukis/scoundrel-tui/internal/tui/hpbar"
+	keymap "github.com/ahaukis/scoundrel-tui/internal/tui/keymap"
+	"github.com/ahaukis/scoundrel-tui/internal/tui/palette"
+	"github.com/ahaukis/scoundrel-tui/internal/tui/table"
 )
 
 type model struct {
